@@ -310,6 +310,7 @@
             const clientPhoneInput = document.getElementById('phone'), managerPhoneInput = document.getElementById('manager-phone');
             const addSlotModal = document.getElementById('add-slot-modal'), addSlotModalContent = addSlotModal.querySelector('div'), addSlotModalDetails = document.getElementById('add-slot-modal-details');
             const cancelAddSlotButton = document.getElementById('cancel-add-slot-button'), confirmAddSlotButton = document.getElementById('confirm-add-slot-button');
+            // NOVO ELEMENTO: Interruptor de sincronização
             const syncToggle = document.getElementById('sync-toggle');
             
             const GESTOR_PASSWORD = "admin"; // MUDE ESTA SENHA!
@@ -319,6 +320,7 @@
             let currentWeekStart = getMonday(new Date()), currentBookingData = null, currentCancellationSlotId = null, currentSlotAddData = null;
             let isManagerView = false, currentUser = null, firebaseReady = false;
             let schedules = {}, monthlySchedules = {}, priceRules = {}, paymentConfig = {};
+            // NOVO ESTADO: Variável para controlar a sincronização
             let syncWithFinance = localStorage.getItem('syncWithFinance') !== 'false'; // Padrão: true (ligado)
 
             const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -369,9 +371,10 @@
                 } else {
                     viewToggleContainer.classList.add('hidden');
                 }
-                updateManagerPanelsVisibility(false);
+                updateManagerPanelsVisibility(false); // false para evitar animação no carregamento inicial
                 initPriceManager();
                 addPlayerInput();
+                // NOVA CONFIGURAÇÃO: Inicializa o interruptor e seu evento
                 syncToggle.checked = syncWithFinance;
                 syncToggle.addEventListener('change', () => {
                     syncWithFinance = syncToggle.checked;
@@ -409,21 +412,15 @@
             window.handleClientPaymentNotification=async id=>{const b=schedules[id];if(b&&b.status==='pending'){try{await updateDoc(doc(db,'schedules',id),{status:'payment_review'});showToast("Aviso de pagamento enviado!")}catch(e){showToast("Erro ao avisar pagamento.",false)}}};
             window.createBookingByManager=async(id,price)=>{const name=document.getElementById('manager-name').value,phone=document.getElementById('manager-phone').value,type=document.querySelector('input[name="manager-booking-type"]:checked').value;if(!name||!phone)return;const[date,time]=id.split('_'),dayDate=new Date(date+'T12:00:00Z'),dayName=dayNames[dayDate.getUTCDay()];try{if(type==='mensal'){const key=`${dayName}_${time}`;await setDoc(doc(db,'monthlySchedules',key),{clientName:name,clientPhone:phone,type:'mensal',time,dayName,price});showToast("Agendamento mensal guardado!")}else{await setDoc(doc(db,'schedules',id),{clientName:name,clientPhone:phone,type:'avulso',status:'booked',price});showToast("Agendamento guardado!")}}catch(e){showToast("Erro ao guardar.",false)}closeManagerModal()};
             
-            // ALTERADO: Adicionados os campos 'categoria' e 'metodo_pagamento'
+            // ALTERADO: Adicionado IF para verificar o interruptor
             window.confirmPayment=async(id,price)=>{
                 const b=schedules[id];
                 if(!b||!['pending','payment_review'].includes(b.status))return;
                 const numPrice=parseFloat(price.replace('.','').replace(',','.')), now=new Date(),y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0'),d=String(now.getDate()).padStart(2,'0'),fDate=`${y}-${m}-${d}`;
                 try {
+                    // Apenas executa a integração se o interruptor estiver ligado
                     if (syncWithFinance) {
-                        await addDoc(collection(db,"transacoes"),{
-                            valor: numPrice,
-                            descricao: `Aluguer: ${b.clientName} (${id})`,
-                            data: fDate,
-                            tipo: 'Receita',
-                            categoria: 'Aluguel de Quadra', // CAMPO ADICIONADO
-                            metodo_pagamento: 'PIX'          // CAMPO ADICIONADO
-                        });
+                        await addDoc(collection(db,"transacoes"),{valor:numPrice,descricao:`Aluguer: ${b.clientName} (${id})`,data:fDate,tipo:'Receita'});
                     }
                     await updateDoc(doc(db,'schedules',id),{status:'booked'});
                     showToast("Pagamento confirmado!");
@@ -433,10 +430,12 @@
                 }
             };
             
+            // ALTERADO: Adicionado IF para verificar o interruptor
             window.cancelBooking=async id=>{
                 const single=schedules[id],monthly=!single?findMonthlyBooking(id):null;
                 try{
                     const now=new Date(),y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0'),d=String(now.getDate()).padStart(2,'0'),fDate=`${y}-${m}-${d}`;
+                    // Apenas executa a integração de estorno se o interruptor estiver ligado
                     if (syncWithFinance) {
                         if(single&&['booked','payment_review'].includes(single.status)){
                             const p=parseFloat(String(single.price||'0').replace('.','').replace(',','.'));
