@@ -129,8 +129,20 @@
                             <div class="flex-grow"><label for="price-input" class="block text-sm font-medium text-gray-300 mb-2">3. Novo preço (R$)</label><input type="text" id="price-input" placeholder="150,00" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-custom-cyan focus:border-custom-cyan"></div>
                              <button id="apply-price-btn" class="flex-shrink-0 h-10 px-5 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80 transition-colors">Aplicar</button>
                         </div>
-                        <div class="lg:col-span-3 mt-4 pt-4 border-t border-gray-700">
+                        <div class="lg:col-span-3 mt-4 pt-4 border-t border-gray-700 space-y-4">
+                            <!-- BOTÃO DE PAGAMENTO EXISTENTE -->
                             <button id="integrate-payment-btn" class="w-full flex items-center justify-center gap-2 h-10 px-5 bg-transparent border-2 border-custom-cyan text-custom-cyan rounded-lg font-bold hover:bg-custom-cyan hover:text-black transition-colors"><i data-lucide="credit-card" class="h-5 w-5"></i>Integrar Meios de Pagamento</button>
+                            <!-- NOVO INTERRUPTOR PARA PAUSAR A INTEGRAÇÃO -->
+                            <div class="flex items-center justify-between p-3 bg-dark-bg/50 rounded-lg">
+                                <label for="sync-toggle" class="flex flex-col">
+                                    <span class="font-medium text-gray-200">Sincronizar com Financeiro</span>
+                                    <span class="text-xs text-gray-400">(Gestor FC)</span>
+                                </label>
+                                <label for="sync-toggle" class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" value="" id="sync-toggle" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-custom-cyan peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-custom-cyan"></div>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -298,6 +310,8 @@
             const clientPhoneInput = document.getElementById('phone'), managerPhoneInput = document.getElementById('manager-phone');
             const addSlotModal = document.getElementById('add-slot-modal'), addSlotModalContent = addSlotModal.querySelector('div'), addSlotModalDetails = document.getElementById('add-slot-modal-details');
             const cancelAddSlotButton = document.getElementById('cancel-add-slot-button'), confirmAddSlotButton = document.getElementById('confirm-add-slot-button');
+            // NOVO ELEMENTO: Interruptor de sincronização
+            const syncToggle = document.getElementById('sync-toggle');
             
             const GESTOR_PASSWORD = "admin"; // MUDE ESTA SENHA!
 
@@ -306,6 +320,8 @@
             let currentWeekStart = getMonday(new Date()), currentBookingData = null, currentCancellationSlotId = null, currentSlotAddData = null;
             let isManagerView = false, currentUser = null, firebaseReady = false;
             let schedules = {}, monthlySchedules = {}, priceRules = {}, paymentConfig = {};
+            // NOVO ESTADO: Variável para controlar a sincronização
+            let syncWithFinance = localStorage.getItem('syncWithFinance') !== 'false'; // Padrão: true (ligado)
 
             const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
             const defaultTimeSlots = ['18:00 - 19:00', '19:00 - 20:00', '20:00 - 21:00', '21:00 - 22:00', '22:00 - 23:00'];
@@ -358,6 +374,13 @@
                 updateManagerPanelsVisibility(false); // false para evitar animação no carregamento inicial
                 initPriceManager();
                 addPlayerInput();
+                // NOVA CONFIGURAÇÃO: Inicializa o interruptor e seu evento
+                syncToggle.checked = syncWithFinance;
+                syncToggle.addEventListener('change', () => {
+                    syncWithFinance = syncToggle.checked;
+                    localStorage.setItem('syncWithFinance', syncWithFinance);
+                    showToast(`Sincronização financeira ${syncWithFinance ? 'ativada' : 'desativada'}.`);
+                });
                 lucide.createIcons();
                 setInterval(checkExpiredReservations, 60000);
             }
@@ -388,8 +411,52 @@
             
             window.handleClientPaymentNotification=async id=>{const b=schedules[id];if(b&&b.status==='pending'){try{await updateDoc(doc(db,'schedules',id),{status:'payment_review'});showToast("Aviso de pagamento enviado!")}catch(e){showToast("Erro ao avisar pagamento.",false)}}};
             window.createBookingByManager=async(id,price)=>{const name=document.getElementById('manager-name').value,phone=document.getElementById('manager-phone').value,type=document.querySelector('input[name="manager-booking-type"]:checked').value;if(!name||!phone)return;const[date,time]=id.split('_'),dayDate=new Date(date+'T12:00:00Z'),dayName=dayNames[dayDate.getUTCDay()];try{if(type==='mensal'){const key=`${dayName}_${time}`;await setDoc(doc(db,'monthlySchedules',key),{clientName:name,clientPhone:phone,type:'mensal',time,dayName,price});showToast("Agendamento mensal guardado!")}else{await setDoc(doc(db,'schedules',id),{clientName:name,clientPhone:phone,type:'avulso',status:'booked',price});showToast("Agendamento guardado!")}}catch(e){showToast("Erro ao guardar.",false)}closeManagerModal()};
-            window.confirmPayment=async(id,price)=>{const b=schedules[id];if(!b||!['pending','payment_review'].includes(b.status))return;const numPrice=parseFloat(price.replace('.','').replace(',','.')),now=new Date(),y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0'),d=String(now.getDate()).padStart(2,'0'),fDate=`${y}-${m}-${d}`;try{await addDoc(collection(db,"transacoes"),{valor:numPrice,descricao:`Aluguer: ${b.clientName} (${id})`,data:fDate,tipo:'Receita'});await updateDoc(doc(db,'schedules',id),{status:'booked'});showToast("Pagamento confirmado!");closeManagerModal()}catch(e){showToast("Erro ao confirmar.",false)}};
-            window.cancelBooking=async id=>{const single=schedules[id],monthly=!single?findMonthlyBooking(id):null;try{const now=new Date(),y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0'),d=String(now.getDate()).padStart(2,'0'),fDate=`${y}-${m}-${d}`;if(single&&['booked','payment_review'].includes(single.status)){const p=parseFloat(String(single.price||'0').replace('.','').replace(',','.'));await addDoc(collection(db,"transacoes"),{valor:p,descricao:`Estorno: ${single.clientName} (${id})`,data:fDate,tipo:'Despesa'})}if(monthly){const p=parseFloat(String(monthly.price||'0').replace('.','').replace(',','.'));await addDoc(collection(db,"transacoes"),{valor:p,descricao:`Estorno Fixo: ${monthly.clientName} (${monthly.dayName} ${monthly.time})`,data:fDate,tipo:'Despesa'})}if(single)await deleteDoc(doc(db,'schedules',id));else if(monthly){const[,,time]=monthly.slotId.split('_'),dayName=monthly.dayName,key=`${dayName}_${time}`;await deleteDoc(doc(db,'monthlySchedules',key))}showToast("Agendamento cancelado.")}catch(e){showToast("Erro ao cancelar.",false)}closeManagerModal()};
+            
+            // ALTERADO: Adicionado IF para verificar o interruptor
+            window.confirmPayment=async(id,price)=>{
+                const b=schedules[id];
+                if(!b||!['pending','payment_review'].includes(b.status))return;
+                const numPrice=parseFloat(price.replace('.','').replace(',','.')), now=new Date(),y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0'),d=String(now.getDate()).padStart(2,'0'),fDate=`${y}-${m}-${d}`;
+                try {
+                    // Apenas executa a integração se o interruptor estiver ligado
+                    if (syncWithFinance) {
+                        await addDoc(collection(db,"transacoes"),{valor:numPrice,descricao:`Aluguer: ${b.clientName} (${id})`,data:fDate,tipo:'Receita'});
+                    }
+                    await updateDoc(doc(db,'schedules',id),{status:'booked'});
+                    showToast("Pagamento confirmado!");
+                    closeManagerModal();
+                } catch(e) {
+                    showToast("Erro ao confirmar.",false);
+                }
+            };
+            
+            // ALTERADO: Adicionado IF para verificar o interruptor
+            window.cancelBooking=async id=>{
+                const single=schedules[id],monthly=!single?findMonthlyBooking(id):null;
+                try{
+                    const now=new Date(),y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0'),d=String(now.getDate()).padStart(2,'0'),fDate=`${y}-${m}-${d}`;
+                    // Apenas executa a integração de estorno se o interruptor estiver ligado
+                    if (syncWithFinance) {
+                        if(single&&['booked','payment_review'].includes(single.status)){
+                            const p=parseFloat(String(single.price||'0').replace('.','').replace(',','.'));
+                            await addDoc(collection(db,"transacoes"),{valor:p,descricao:`Estorno: ${single.clientName} (${id})`,data:fDate,tipo:'Despesa'})
+                        }
+                        if(monthly){
+                            const p=parseFloat(String(monthly.price||'0').replace('.','').replace(',','.'));
+                            await addDoc(collection(db,"transacoes"),{valor:p,descricao:`Estorno Fixo: ${monthly.clientName} (${monthly.dayName} ${monthly.time})`,data:fDate,tipo:'Despesa'})
+                        }
+                    }
+                    if(single)await deleteDoc(doc(db,'schedules',id));
+                    else if(monthly){
+                        const[,,time]=monthly.slotId.split('_'),dayName=monthly.dayName,key=`${dayName}_${time}`;
+                        await deleteDoc(doc(db,'monthlySchedules',key))
+                    }
+                    showToast("Agendamento cancelado.")
+                } catch(e) {
+                    showToast("Erro ao cancelar.",false)
+                }
+                closeManagerModal()
+            };
             
             function formatTimeDiff(diff){const d=Math.floor(diff/864e5),h=Math.floor(diff%864e5/36e5),m=Math.floor(diff%36e5/6e4);let p=[];if(d>0)p.push(`${d} dia${d>1?'s':''}`);if(h>0)p.push(`${h} hora${h>1?'s':''}`);if(m>0&&d===0)p.push(`${m} min`);if(p.length===0)return"agora";return`em ${p.join(', ')}`}
             function updateNextEventDashboard(){const now=new Date();let all=[];for(const id in schedules){const b=schedules[id];if(['booked','payment_review'].includes(b.status)){const[date,time]=id.split('_'),[start]=time.split(' - '),eventDate=new Date(`${date}T${start}:00`);if(eventDate>now)all.push({...b,date:eventDate,slotId:id})}}for(const key in monthlySchedules){const b=monthlySchedules[key],[dayName,time]=key.split('_'),[start]=time.split(' - '),[h,m]=start.split(':'),target=dayNames.indexOf(dayName);let next=new Date();next.setHours(h,m,0,0);const diff=(target-next.getDay()+7)%7;next.setDate(next.getDate()+diff);if(next<now)next.setDate(next.getDate()+7);all.push({...b,date:next,slotId:`${formatFullDate(next)}_${time}`})}if(all.length>0){all.sort((a,b)=>a.date-b.date);const next=all[0],diff=next.date.getTime()-now.getTime(),[date,time]=next.slotId.split('_'),day=new Date(date+'T12:00:00Z');nextEventDetails.innerHTML=`<div class="grid sm:grid-cols-3 gap-4 items-center"><div class="sm:col-span-2"><p class="text-lg font-semibold">${next.clientName}</p><p class="text-gray-400">${dayNames[day.getUTCDay()]}, ${formatDate(day)} às ${time}</p></div><div class="text-center sm:text-right"><p class="text-2xl font-bold text-custom-cyan">${formatTimeDiff(diff)}</p></div></div>`}else{nextEventDetails.innerHTML='<p class="text-gray-400">Nenhum agendamento futuro.</p>'}}
