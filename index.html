@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agendamento de Society</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -25,12 +27,13 @@
         .capitalize { text-transform: capitalize; }
         input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
         .fading-out { opacity: 0; }
-        #price-manager-content, #team-sorter-content {
+        #price-manager-content, #team-sorter-content, #visual-settings-content {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
     </style>
+
 
     <script>
         // Configuração do Tailwind CSS
@@ -49,67 +52,130 @@
 </head>
 <body class="bg-dark-bg text-gray-200 font-sans antialiased">
 
-    <!-- Ecrã de Login para o Gestor -->
-    <div id="login-screen" class="fixed inset-0 bg-dark-bg z-[100] flex items-center justify-center p-4">
-        <div class="w-full max-w-sm text-center">
-            <i data-lucide="shield-check" class="h-16 w-16 text-custom-cyan mx-auto mb-6"></i>
-            <h2 class="text-3xl font-bold text-white mb-2">Acesso Restrito</h2>
-            <p class="text-gray-400 mb-8">Esta área é reservada para a gestão.</p>
-            <div class="space-y-4">
-                <input type="password" id="password-input" placeholder="Digite a sua senha" class="w-full bg-dark-card border border-gray-700 rounded-lg py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-custom-cyan transition-colors">
-                <button id="login-button" class="w-full py-3 px-5 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80 transition-colors">Entrar</button>
-            </div>
-            <p id="error-message" class="text-red-500 mt-4 h-5"></p>
+    <!-- Ecrã de Erro (Sem Escola) -->
+    <div id="error-screen" class="fixed inset-0 bg-dark-bg z-[200] flex items-center justify-center p-4 hidden">
+        <div class="text-center max-w-md">
+            <i data-lucide="link-2-off" class="h-16 w-16 text-red-500 mx-auto mb-6"></i>
+            <h2 class="text-3xl font-bold text-white mb-2">Link Incompleto</h2>
+            <p class="text-gray-400">Não identificamos a escola neste link.</p>
+            <p class="text-sm text-gray-500 mt-4">Certifique-se de usar o link fornecido pelo Gestor FC.</p>
         </div>
     </div>
 
     <!-- Conteúdo Principal da Aplicação -->
-    <div id="app" class="min-h-screen flex-col hidden">
-        <header class="bg-dark-card/50 backdrop-blur-sm sticky top-0 z-20">
+    <div id="app-container" class="hidden"> <!-- Container Wrapper para controle de visibilidade -->
+    <div id="app" class="min-h-screen flex-col flex">
+        
+        <!-- HEADER DINÂMICO -->
+        <header class="bg-dark-card/90 backdrop-blur-sm sticky top-0 z-20 border-b border-gray-800 shadow-md">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16">
-                    <div class="flex items-center">
-                        <i data-lucide="calendar-check" class="h-8 w-8 text-custom-cyan"></i>
-                        <h1 class="ml-3 text-xl font-bold tracking-tight">Agendamento Society</h1>
+                <div class="flex items-center justify-between h-20"> <!-- Altura aumentada para acomodar endereço -->
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <!-- Logo da Quadra (Dinâmica) -->
+                        <div id="header-logo-container" class="h-12 w-12 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden border border-gray-600 flex-shrink-0">
+                            <i data-lucide="calendar-check" class="h-6 w-6 text-custom-cyan"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <h1 id="header-school-name" class="text-lg sm:text-xl font-bold tracking-tight text-white truncate">Agendamento Society</h1>
+                            <p id="header-school-address" class="text-xs text-gray-400 truncate max-w-[200px] sm:max-w-md flex items-center gap-1 hidden">
+                                <i data-lucide="map-pin" class="h-3 w-3"></i> <span></span>
+                            </p>
+                        </div>
                     </div>
-                    <div id="view-toggle-container" class="hidden items-center space-x-3">
-                        <span class="font-medium text-gray-300">Cliente</span>
+                    <div id="view-toggle-container" class="hidden items-center space-x-3 flex-shrink-0 ml-2">
+                        <span class="font-medium text-gray-300 text-sm sm:text-base">Cliente</span>
                         <label for="view-toggle" class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" value="" id="view-toggle" class="sr-only peer">
                             <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-custom-cyan peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-custom-cyan"></div>
                         </label>
-                        <span class="font-medium text-white">Gestor</span>
+                        <span class="font-medium text-white text-sm sm:text-base">Gestor</span>
                     </div>
                 </div>
             </div>
         </header>
 
         <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
+            <!-- NAVEGAÇÃO DE SEMANAS -->
             <div class="flex items-center justify-center mb-8">
                 <button id="prev-week" class="flex items-center gap-2 p-2 rounded-lg hover:bg-dark-card transition-colors">
                     <i data-lucide="chevron-left" class="h-6 w-6"></i>
-                    <span class="hidden sm:inline font-semibold">Semana Anterior</span>
+                    <span class="hidden sm:inline font-semibold">Anterior</span>
                 </button>
                 <h2 id="week-display" class="text-xl sm:text-2xl font-semibold mx-4 sm:mx-8 w-64 text-center">Carregando...</h2>
                 <button id="next-week" class="flex items-center gap-2 p-2 rounded-lg hover:bg-dark-card transition-colors">
-                    <span class="hidden sm:inline font-semibold">Próxima Semana</span>
+                    <span class="hidden sm:inline font-semibold">Próxima</span>
                     <i data-lucide="chevron-right" class="h-6 w-6"></i>
                 </button>
             </div>
+            
+            <!-- BUSCA -->
             <div class="mb-6">
                 <div class="relative max-w-sm mx-auto">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i data-lucide="search" class="h-5 w-5 text-gray-400"></i>
                     </div>
-                    <input type="text" id="search-input" placeholder="Pesquisar por dia da semana..." class="w-full bg-dark-card border border-gray-700 rounded-lg py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-custom-cyan focus:border-custom-cyan transition-colors">
+                    <input type="text" id="search-input" placeholder="Pesquisar dia..." class="w-full bg-dark-card border border-gray-700 rounded-lg py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-custom-cyan">
                 </div>
             </div>
             
             <div id="manager-panels">
+                
+                <!-- PAINEL DE DIVULGAÇÃO -->
+                <div id="share-panel" class="mb-8 p-6 bg-gradient-to-r from-dark-card to-gray-900 rounded-xl max-w-4xl mx-auto border border-gray-700">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <i data-lucide="share-2" class="h-6 w-6 text-custom-cyan"></i>
+                        Divulgue sua Agenda
+                    </h3>
+                    <p class="text-gray-400 text-sm mb-4">Este é o link que os seus clientes devem usar para agendar horários.</p>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="relative flex-grow">
+                            <input type="text" id="share-link-input" readonly class="w-full bg-black/30 border border-gray-600 rounded-lg py-3 px-4 text-gray-300 text-sm font-mono focus:outline-none cursor-text select-all">
+                            <button id="copy-share-link" class="absolute right-2 top-2 p-1 bg-dark-card hover:bg-gray-600 rounded text-custom-cyan transition-colors" title="Copiar">
+                                <i data-lucide="copy" class="h-5 w-5"></i>
+                            </button>
+                        </div>
+                        <button id="share-whatsapp-btn" class="flex items-center justify-center gap-2 py-2 px-5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors whitespace-nowrap">
+                            <i data-lucide="message-circle" class="h-5 w-5"></i>
+                            Enviar no Zap
+                        </button>
+                    </div>
+                </div>
+
+                <!-- NOVO PAINEL: IDENTIDADE VISUAL -->
+                <div id="visual-settings-panel" class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto border border-gray-700">
+                    <div class="flex justify-between items-center cursor-pointer" id="visual-settings-header">
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i data-lucide="palette" class="h-6 w-6 text-purple-400"></i>
+                            Identidade Visual da Quadra
+                        </h3>
+                        <button id="toggle-visual-settings" class="p-1 rounded-full hover:bg-dark-card-hover"><i data-lucide="chevron-up" class="h-6 w-6 transition-transform duration-300" style="transform: rotate(180deg);"></i></button>
+                    </div>
+                    <div id="visual-settings-content" class="mt-4 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Nome da Quadra (Ex: Society Azaleias)</label>
+                            <input type="text" id="visual-name-input" placeholder="Agendamento Society" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:ring-custom-cyan focus:border-custom-cyan">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Endereço (Opcional)</label>
+                            <input type="text" id="visual-address-input" placeholder="Rua das Flores, 123 - Centro" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:ring-custom-cyan focus:border-custom-cyan">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Link da Logo/Foto (URL)</label>
+                            <input type="text" id="visual-logo-input" placeholder="https://..." class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:ring-custom-cyan focus:border-custom-cyan">
+                            <p class="text-xs text-gray-500 mt-1">Cole o link direto de uma imagem (ex: Imgur, Google Drive link direto).</p>
+                        </div>
+                        <div class="flex justify-end pt-2">
+                            <button id="save-visual-btn" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold transition-colors">Salvar Identidade</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="next-event-dashboard" class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto border border-custom-cyan/50">
                     <h3 class="text-xl font-bold text-white mb-4 flex items-center"><i data-lucide="bell-ring" class="h-6 w-6 mr-3 text-custom-cyan"></i>Próximo Evento</h3>
                     <div id="next-event-details"><p class="text-gray-400">Nenhum agendamento futuro encontrado.</p></div>
                 </div>
+                
                 <div id="price-manager" class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto">
                     <div class="flex justify-between items-center cursor-pointer" id="price-manager-header">
                         <h3 class="text-xl font-bold text-white">Gerir Preços</h3>
@@ -132,7 +198,7 @@
                         <div class="lg:col-span-3 mt-4 pt-4 border-t border-gray-700 space-y-4">
                             <!-- BOTÃO DE PAGAMENTO EXISTENTE -->
                             <button id="integrate-payment-btn" class="w-full flex items-center justify-center gap-2 h-10 px-5 bg-transparent border-2 border-custom-cyan text-custom-cyan rounded-lg font-bold hover:bg-custom-cyan hover:text-black transition-colors"><i data-lucide="credit-card" class="h-5 w-5"></i>Integrar Meios de Pagamento</button>
-                            <!-- NOVO INTERRUPTOR PARA PAUSAR A INTEGRAÇÃO -->
+                            <!-- INTERRUPTOR PARA PAUSAR A INTEGRAÇÃO -->
                             <div class="flex items-center justify-between p-3 bg-dark-bg/50 rounded-lg">
                                 <label for="sync-toggle" class="flex flex-col">
                                     <span class="font-medium text-gray-200">Sincronizar com Financeiro</span>
@@ -193,7 +259,7 @@
                 <span>Desenvolvido por Jardel Feitosa</span>
             </a>
         </footer>
-        
+    </div>
     </div>
 
     <!-- Modais -->
@@ -250,7 +316,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE ADICIONAR HORÁRIO (RESTAURADO) -->
+    <!-- MODAL DE ADICIONAR HORÁRIO -->
     <div id="add-slot-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
         <div class="bg-dark-card rounded-xl shadow-2xl p-8 w-full max-w-md m-4 transform transition-all duration-300 scale-95 opacity-0">
             <h3 class="text-2xl font-bold text-white mb-2">Adicionar na Agenda</h3>
@@ -286,7 +352,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        import { getFirestore, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDcY1-29jWmbnpBDePgAmJfWhr79Nsl7Ug",
@@ -301,10 +367,39 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+
+        // --- LÓGICA MULTI-TENANT ---
+
+
+        // 1. Função para extrair o ID da URL (parâmetro ?escolaId=...)
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        const escolaId = getQueryParam('escolaId');
+        const userRole = getQueryParam('role'); // <-- NOVO: Captura o cargo
+
+        // 2. Função global para gerar referências SCOPED (filtradas pela escola)
+        function getScopedCollectionRef(collectionName) {
+            if (escolaId) {
+                const escolaRef = doc(db, 'escolas', escolaId);
+                return collection(escolaRef, collectionName);
+            }
+            console.error("Tentativa de acesso sem ID de escola. Bloqueado.");
+            throw new Error("Acesso negado: ID da escola ausente.");
+        }
+
+        // 3. Verifica se o acesso é de gestor e se o ID está presente
+        if (!escolaId) {
+            document.getElementById('error-screen').classList.remove('hidden');
+            throw new Error("ID da Escola não encontrado."); 
+        }
+        // --- FIM DA LÓGICA MULTI-TENANT ---
+
         document.addEventListener('DOMContentLoaded', () => {
             // Elementos da UI (a lista completa)
-            const loginScreen = document.getElementById('login-screen'), appContent = document.getElementById('app'), passwordInput = document.getElementById('password-input');
-            const loginButton = document.getElementById('login-button'), errorMessage = document.getElementById('error-message'), weekDisplay = document.getElementById('week-display');
+            const appContent = document.getElementById('app'), weekDisplay = document.getElementById('week-display');
             const kanbanBoard = document.getElementById('kanban-board'), prevWeekBtn = document.getElementById('prev-week'), nextWeekBtn = document.getElementById('next-week');
             const searchInput = document.getElementById('search-input'), viewToggleContainer = document.getElementById('view-toggle-container'), viewToggle = document.getElementById('view-toggle');
             const managerPanels = document.getElementById('manager-panels'), bookingModal = document.getElementById('booking-modal'), bookingModalContent = bookingModal.querySelector('div');
@@ -325,9 +420,14 @@
             const cancelAddSlotButton = document.getElementById('cancel-add-slot-button'), confirmAddSlotButton = document.getElementById('confirm-add-slot-button');
             // NOVO ELEMENTO: Interruptor de sincronização
             const syncToggle = document.getElementById('sync-toggle');
+            // NOVOS ELEMENTOS DE DIVULGAÇÃO
+            const sharePanel = document.getElementById('share-panel'), shareLinkInput = document.getElementById('share-link-input'), copyShareLinkBtn = document.getElementById('copy-share-link'), shareWhatsappBtn = document.getElementById('share-whatsapp-btn');
+            // NOVOS ELEMENTOS DE IDENTIDADE VISUAL
+            const visualSettingsPanel = document.getElementById('visual-settings-panel'), visualSettingsHeader = document.getElementById('visual-settings-header'), visualSettingsContent = document.getElementById('visual-settings-content'), toggleVisualSettingsBtn = document.getElementById('toggle-visual-settings');
+            const visualNameInput = document.getElementById('visual-name-input'), visualAddressInput = document.getElementById('visual-address-input'), visualLogoInput = document.getElementById('visual-logo-input'), saveVisualBtn = document.getElementById('save-visual-btn');
+            // ELEMENTOS DO HEADER
+            const headerLogoContainer = document.getElementById('header-logo-container'), headerSchoolName = document.getElementById('header-school-name'), headerSchoolAddress = document.getElementById('header-school-address');
             
-            const GESTOR_PASSWORD = "ousacs2025@"; // MUDE ESTA SENHA!
-
             // Estado da Aplicação
             const todayStr = formatFullDate(new Date());
             let currentWeekStart = getMonday(new Date()), currentBookingData = null, currentCancellationSlotId = null, currentSlotAddData = null;
@@ -339,50 +439,163 @@
             const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
             const defaultTimeSlots = ['18:00 - 19:00', '19:00 - 20:00', '20:00 - 21:00', '21:00 - 22:00', '22:00 - 23:00'];
 
-            function checkAccess() {
-                const isLoggedIn = sessionStorage.getItem('isManagerLoggedIn') === 'true';
-                if (window.location.hash === '#gestor') isLoggedIn ? showApp(true) : showLogin();
-                else showApp(false);
+
+           function checkAccess() {
+                if (!escolaId) return; // Já tratado pelo erro global
+
+                if (window.location.hash === '#gestor') {
+                    // Verifica se o ID da escola está presente E se o usuário é Administrador
+                    if (escolaId && userRole === 'admin') {
+                        // Acesso liberado se for Admin e tiver ID da escola!
+                        document.getElementById('app-container').classList.remove('hidden');
+                        // Removemos a necessidade do modal de senha
+                        showApp(true);
+                    } else if (escolaId) {
+                        // Usuário logado (tem escolaId), mas não é admin
+                        document.getElementById('app-container').innerHTML = '<div style="padding: 50px; text-align: center; color: red; font-size: 18px; font-weight: bold;">Acesso negado. Apenas administradores podem gerenciar o Aluguel de Quadras.</div>';
+                         document.getElementById('app-container').classList.remove('hidden');
+                    } 
+                } else {
+                    // Modo Cliente (sem #gestor)
+                    document.getElementById('app-container').classList.remove('hidden');
+                    showApp(false);
+                }
             }
-            function showLogin() { loginScreen.classList.remove('hidden'); appContent.classList.add('hidden'); }
+            
             function showApp(isManager) {
                 isManagerView = isManager;
-                loginScreen.classList.add('hidden');
-                appContent.classList.remove('hidden');
-                appContent.classList.add('flex');
                 initApp();
-            }
-            loginButton.addEventListener('click', () => {
-                if (passwordInput.value === GESTOR_PASSWORD) {
-                    sessionStorage.setItem('isManagerLoggedIn', 'true'); checkAccess();
-                } else {
-                    errorMessage.textContent = 'Senha incorreta.'; passwordInput.classList.add('border-red-500');
-                    setTimeout(() => { errorMessage.textContent = ''; passwordInput.classList.remove('border-red-500'); }, 3000);
+                // Configura o painel de compartilhamento (apenas se for admin)
+                if (isManager) {
+                    setupSharePanel();
                 }
-            });
-            passwordInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') loginButton.click(); });
+            }
 
-            async function initApp() {
+            // NOVA FUNÇÃO: Configura o link de compartilhamento
+            function setupSharePanel() {
+                // Gera o link limpo (base url + escolaId)
+                const cleanLink = `${window.location.origin}${window.location.pathname}?escolaId=${escolaId}`;
+                shareLinkInput.value = cleanLink;
+
+                // Copiar link
+                copyShareLinkBtn.onclick = () => {
+                    navigator.clipboard.writeText(cleanLink).then(() => showToast("Link copiado para a área de transferência!"));
+                };
+
+                // Compartilhar no WhatsApp
+                shareWhatsappBtn.onclick = () => {
+                    const text = encodeURIComponent(`Olá! Agende seu horário na nossa quadra através deste link: ${cleanLink}`);
+                    window.open(`https://wa.me/?text=${text}`, '_blank');
+                };
+            }
+
+            function initApp() {
                 onAuthStateChanged(auth, (user) => {
                     if (user) { currentUser = user; setupFirestoreListeners(); } 
                     else { signInAnonymously(auth).catch((e) => console.error("Login anónimo falhou:", e)); }
                 });
+                loadVisualIdentity(); // Carrega identidade visual independente do login
             }
+
+            // --- LÓGICA DE IDENTIDADE VISUAL ---
+            async function loadVisualIdentity() {
+                if (!escolaId) return;
+                try {
+                    // Busca na coleção 'configurations', documento 'visualIdentity'
+                    const docRef = doc(getScopedCollectionRef('configurations'), 'visualIdentity');
+                    const docSnap = await getDoc(docRef);
+                    
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        applyVisualIdentity(data);
+                        // Preenche os inputs se estiver no painel de admin
+                        if (visualNameInput) visualNameInput.value = data.name || '';
+                        if (visualAddressInput) visualAddressInput.value = data.address || '';
+                        if (visualLogoInput) visualLogoInput.value = data.logoUrl || '';
+                    }
+                } catch (e) {
+                    console.error("Erro ao carregar identidade visual:", e);
+                }
+            }
+
+            function applyVisualIdentity(data) {
+                // Nome
+                if (data.name) {
+                    headerSchoolName.textContent = data.name;
+                    document.title = data.name; // Muda o título da aba do navegador
+                }
+                // Endereço
+                if (data.address) {
+                    headerSchoolAddress.querySelector('span').textContent = data.address;
+                    headerSchoolAddress.classList.remove('hidden');
+                } else {
+                    headerSchoolAddress.classList.add('hidden');
+                }
+                // Logo
+                if (data.logoUrl) {
+                    headerLogoContainer.innerHTML = `<img src="${data.logoUrl}" alt="Logo" class="w-full h-full object-cover">`;
+                    headerLogoContainer.classList.remove('bg-gray-800');
+                    headerLogoContainer.classList.remove('border-gray-600');
+                    headerLogoContainer.classList.add('border-transparent');
+                }
+            }
+
+            // Salvar Identidade Visual
+            saveVisualBtn.addEventListener('click', async () => {
+                const name = visualNameInput.value.trim();
+                const address = visualAddressInput.value.trim();
+                const logoUrl = visualLogoInput.value.trim();
+
+                try {
+                    const data = { name, address, logoUrl };
+                    await setDoc(doc(getScopedCollectionRef('configurations'), 'visualIdentity'), data);
+                    applyVisualIdentity(data); // Aplica instantaneamente
+                    showToast("Identidade visual atualizada!");
+                    togglePanel(visualSettingsContent, toggleVisualSettingsBtn.querySelector('i')); // Fecha o painel
+                } catch (e) {
+                    showToast("Erro ao salvar identidade.", false);
+                    console.error(e);
+                }
+            });
+
             function setupFirestoreListeners() {
-                onSnapshot(collection(db, 'schedules'), snap => { schedules = {}; snap.forEach(doc => schedules[doc.id] = doc.data()); if(firebaseReady) renderBasedOnCurrentView(); });
-                onSnapshot(collection(db, 'monthlySchedules'), snap => { monthlySchedules = {}; snap.forEach(doc => monthlySchedules[doc.id] = doc.data()); if(firebaseReady) renderBasedOnCurrentView(); });
-                onSnapshot(doc(db, 'configurations', 'payment'), docSnap => { paymentConfig = docSnap.exists() ? docSnap.data() : { pixKey: '' }; });
-                onSnapshot(doc(db, 'configurations', 'priceRules'), docSnap => {
+                if (!escolaId) return; // Segurança extra
+
+                // Listeners para os agendamentos
+                onSnapshot(getScopedCollectionRef('schedules'), snap => {
+                    schedules = {}; 
+                    snap.forEach(doc => schedules[doc.id] = doc.data()); 
+                    if(firebaseReady) renderBasedOnCurrentView(); 
+                });
+                
+                onSnapshot(getScopedCollectionRef('monthlySchedules'), snap => { 
+                    monthlySchedules = {}; 
+                    snap.forEach(doc => monthlySchedules[doc.id] = doc.data()); 
+                    if(firebaseReady) renderBasedOnCurrentView(); 
+                });
+                
+                // Listener para o PIX/Configurações de Pagamento
+                onSnapshot(doc(getScopedCollectionRef('configurations'), 'payment'), docSnap => {
+                    paymentConfig = docSnap.exists() ? docSnap.data() : { pixKey: '' };
+                });
+
+                // Listener para as Regras de Preço (PriceRules)
+                onSnapshot(doc(getScopedCollectionRef('configurations'), 'priceRules'), docSnap => {
                     priceRules = docSnap.exists() ? docSnap.data() : { default: { '18:00-19:00':'150,00', '19:00-20:00':'150,00', '20:00-21:00':'180,00', '21:00-22:00':'180,00', '22:00-23:00':'120,00' }};
                     if (!firebaseReady) { firebaseReady = true; configureInitialView(); }
                     renderBasedOnCurrentView();
                 });
             }
+        
             function configureInitialView() {
                 if (isManagerView) {
                     viewToggleContainer.classList.add('flex'); viewToggleContainer.classList.remove('hidden'); viewToggle.checked = true;
+                    sharePanel.classList.remove('hidden'); 
+                    visualSettingsPanel.classList.remove('hidden'); // Mostra painel de visual para admin
                 } else {
                     viewToggleContainer.classList.add('hidden');
+                    sharePanel.classList.add('hidden');
+                    visualSettingsPanel.classList.add('hidden'); // Esconde para clientes
                 }
                 updateManagerPanelsVisibility(false); // false para evitar animação no carregamento inicial
                 initPriceManager();
@@ -403,7 +616,7 @@
             function formatDate(d){const day=String(d.getDate()).padStart(2,'0'),month=String(d.getMonth()+1).padStart(2,'0');return`${day}/${month}`}
             function formatFullDate(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${day}`}
             function getPrice(fullDate,dayName,time){const monthly=Object.values(monthlySchedules).find(m=>m.dayName===dayName&&m.time===time);if(monthly)return monthly.price;if(priceRules[fullDate]&&priceRules[fullDate][time])return priceRules[fullDate][time];if(priceRules[dayName]&&priceRules[dayName][time])return priceRules[dayName][time];return(priceRules.default&&priceRules.default[time])||'0,00'}
-            function checkExpiredReservations(){const now=Date.now();for(const id in schedules){const b=schedules[id];if(b.status==='pending'&&b.expiresAt&&now>b.expiresAt.toMillis()){deleteDoc(doc(db,'schedules',id))}}}
+            function checkExpiredReservations(){const now=Date.now();for(const id in schedules){const b=schedules[id];if(b.status==='pending'&&b.expiresAt&&now>b.expiresAt.toMillis()){deleteDoc(doc(getScopedCollectionRef('schedules'),id))}}}
             function findMonthlyBooking(slotId){const[date,time]=slotId.split('_'),dayDate=new Date(date+'T12:00:00Z'),dayName=dayNames[dayDate.getUTCDay()],key=Object.keys(monthlySchedules).find(k=>{const s=monthlySchedules[k];return s.dayName===dayName&&s.time===time});return key?{...monthlySchedules[key],slotId,status:'booked'}:null}
             function renderBasedOnCurrentView(){if(!firebaseReady)return;const term=searchInput.value;if(term)renderFilteredDays(term);else renderWeek();if(isManagerView)updateNextEventDashboard()}
             function showToast(msg,isSuccess=true){toastMessage.textContent=msg;if(isSuccess){toastIcon.innerHTML=`<i data-lucide="check-circle" class="h-6 w-6 text-custom-cyan"></i>`;toastNotification.classList.remove('border-red-500');toastNotification.classList.add('border-custom-cyan')}else{toastIcon.innerHTML=`<i data-lucide="alert-triangle" class="h-6 w-6 text-red-500"></i>`;toastNotification.classList.remove('border-custom-cyan');toastNotification.classList.add('border-red-500')}lucide.createIcons();toastNotification.classList.remove('translate-x-[calc(100%+20px)]','opacity-0');setTimeout(()=>toastNotification.classList.add('translate-x-[calc(100%+20px)]','opacity-0'),5000)}
@@ -422,51 +635,149 @@
             function openPaymentModal(){document.getElementById('pix-key-input').value=paymentConfig.pixKey||'';paymentModal.classList.remove('hidden');setTimeout(()=>paymentModalContent.classList.remove('scale-95','opacity-0'),10)}
             function openAddSlotModal(date){currentSlotAddData={date};const dayDate=new Date(date+'T12:00:00Z');addSlotModalDetails.textContent=`Adicionar para ${dayNames[dayDate.getUTCDay()]}, ${formatDate(dayDate)}`;addSlotModal.classList.remove('hidden');setTimeout(()=>addSlotModalContent.classList.remove('scale-95','opacity-0'),10)}
             
-            window.handleClientPaymentNotification=async id=>{const b=schedules[id];if(b&&b.status==='pending'){try{await updateDoc(doc(db,'schedules',id),{status:'payment_review'});showToast("Aviso de pagamento enviado!")}catch(e){showToast("Erro ao avisar pagamento.",false)}}};
-            window.createBookingByManager=async(id,price)=>{const name=document.getElementById('manager-name').value,phone=document.getElementById('manager-phone').value,type=document.querySelector('input[name="manager-booking-type"]:checked').value;if(!name||!phone)return;const[date,time]=id.split('_'),dayDate=new Date(date+'T12:00:00Z'),dayName=dayNames[dayDate.getUTCDay()];try{if(type==='mensal'){const key=`${dayName}_${time}`;await setDoc(doc(db,'monthlySchedules',key),{clientName:name,clientPhone:phone,type:'mensal',time,dayName,price});showToast("Agendamento mensal guardado!")}else{await setDoc(doc(db,'schedules',id),{clientName:name,clientPhone:phone,type:'avulso',status:'booked',price});showToast("Agendamento guardado!")}}catch(e){showToast("Erro ao guardar.",false)}closeManagerModal()};
-            
-            // ALTERADO: Adicionado IF para verificar o interruptor
-            window.confirmPayment=async(id,price)=>{
-                const b=schedules[id];
-                if(!b||!['pending','payment_review'].includes(b.status))return;
-                const numPrice=parseFloat(price.replace('.','').replace(',','.')), now=new Date(),y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0'),d=String(now.getDate()).padStart(2,'0'),fDate=`${y}-${m}-${d}`;
-                try {
-                    // Apenas executa a integração se o interruptor estiver ligado
-                    if (syncWithFinance) {
-                        await addDoc(collection(db,"transacoes"),{valor:numPrice,descricao:`Aluguer: ${b.clientName} (${id})`,data:fDate,tipo:'Receita'});
+            window.handleClientPaymentNotification = async id => {
+                const b = schedules[id];
+                if (b && b.status === 'pending') {
+                    try {
+                        await updateDoc(doc(getScopedCollectionRef('schedules'), id), { status: 'payment_review' });
+                        showToast("Aviso de pagamento enviado!")
+                    } catch (e) {
+                        showToast("Erro ao avisar pagamento.", false)
                     }
-                    await updateDoc(doc(db,'schedules',id),{status:'booked'});
+                }
+            };
+
+            window.createBookingByManager = async (id, price) => {
+                const name = document.getElementById('manager-name').value;
+                const phone = document.getElementById('manager-phone').value;
+                const type = document.querySelector('input[name="manager-booking-type"]:checked').value;
+                if (!name || !phone) return;
+
+                const [date, time] = id.split('_');
+                const dayDate = new Date(date + 'T12:00:00Z');
+                const dayName = dayNames[dayDate.getUTCDay()];
+
+                try {
+                    if (type === 'mensal') {
+                        const key = `${dayName}_${time}`;
+                        await setDoc(doc(getScopedCollectionRef('monthlySchedules'), key), {
+                            clientName: name,
+                            clientPhone: phone,
+                            type: 'mensal',
+                            time,
+                            dayName,
+                            price
+                        });
+                        showToast("Agendamento mensal guardado!")
+                    } else {
+                        await setDoc(doc(getScopedCollectionRef('schedules'), id), {
+                            clientName: name,
+                            clientPhone: phone,
+                            type: 'avulso',
+                            status: 'booked',
+                            price
+                        });
+                        showToast("Agendamento guardado!")
+                    }
+                } catch (e) {
+                    showToast("Erro ao guardar.", false)
+                }
+                closeManagerModal()
+            };
+            
+            function updateManagerPanelsVisibility(animate = true) {
+                const shouldShowManager = viewToggle.checked;
+                managerPanels.classList.toggle('hidden', !shouldShowManager);
+                teamSorter.classList.toggle('hidden', shouldShowManager);
+                if (shouldShowManager) {
+                    togglePanel(priceManagerContent, togglePriceManagerBtn.querySelector('i'), animate);
+                    document.getElementById('share-panel').classList.remove('hidden');
+                    visualSettingsPanel.classList.remove('hidden'); // Mostra painel visual para admin
+                    togglePanel(visualSettingsContent, toggleVisualSettingsBtn.querySelector('i'), animate);
+                } else {
+                    togglePanel(teamSorterContent, toggleTeamSorterBtn.querySelector('i'), animate);
+                    document.getElementById('share-panel').classList.add('hidden');
+                    visualSettingsPanel.classList.add('hidden'); // Esconde painel visual de clientes
+                }
+            }
+
+           window.confirmPayment = async (id, price) => {
+                const b = schedules[id];
+                if (!b || !['pending', 'payment_review'].includes(b.status)) return;
+                
+                const numPrice = parseFloat(price.replace('.', '').replace(',', '.'));
+                const now = new Date();
+                const y = now.getFullYear();
+                const m = String(now.getMonth() + 1).padStart(2, '0');
+                const d = String(now.getDate()).padStart(2, '0');
+                const fDate = `${y}-${m}-${d}`;
+
+                try {
+                    // 1. REGISTRO FINANCEIRO ISOLADO
+                    if (syncWithFinance) {
+                        await addDoc(getScopedCollectionRef("transacoes"), {
+                            valor: numPrice,
+                            descricao: `Aluguel: ${b.clientName} (${id})`,
+                            data: fDate,
+                            tipo: 'Receita'
+                        });
+                    }
+
+                    // 2. ATUALIZAÇÃO DO AGENDAMENTO ISOLADO
+                    await updateDoc(doc(getScopedCollectionRef('schedules'), id), { status: 'booked' });
+
                     showToast("Pagamento confirmado!");
                     closeManagerModal();
-                } catch(e) {
-                    showToast("Erro ao confirmar.",false);
+                } catch (e) {
+                    showToast("Erro ao confirmar.", false);
                 }
             };
             
-            // ALTERADO: Adicionado IF para verificar o interruptor
-            window.cancelBooking=async id=>{
-                const single=schedules[id],monthly=!single?findMonthlyBooking(id):null;
-                try{
-                    const now=new Date(),y=now.getFullYear(),m=String(now.getMonth()+1).padStart(2,'0'),d=String(now.getDate()).padStart(2,'0'),fDate=`${y}-${m}-${d}`;
-                    // Apenas executa a integração de estorno se o interruptor estiver ligado
+            window.cancelBooking = async id => {
+                const single = schedules[id];
+                const monthly = !single ? findMonthlyBooking(id) : null;
+                
+                try {
+                    const now = new Date();
+                    const y = now.getFullYear();
+                    const m = String(now.getMonth() + 1).padStart(2, '0');
+                    const d = String(now.getDate()).padStart(2, '0');
+                    const fDate = `${y}-${m}-${d}`;
+
+                    // 1. REGISTRO DE ESTORNO (Despesa)
                     if (syncWithFinance) {
-                        if(single&&['booked','payment_review'].includes(single.status)){
-                            const p=parseFloat(String(single.price||'0').replace('.','').replace(',','.'));
-                            await addDoc(collection(db,"transacoes"),{valor:p,descricao:`Estorno: ${single.clientName} (${id})`,data:fDate,tipo:'Despesa'})
+                        if (single && ['booked', 'payment_review'].includes(single.status)) {
+                            const p = parseFloat(String(single.price || '0').replace('.', '').replace(',', '.'));
+                            await addDoc(getScopedCollectionRef("transacoes"), {
+                                valor: p,
+                                descricao: `Estorno: ${single.clientName} (${id})`,
+                                data: fDate,
+                                tipo: 'Despesa'
+                            });
                         }
-                        if(monthly){
-                            const p=parseFloat(String(monthly.price||'0').replace('.','').replace(',','.'));
-                            await addDoc(collection(db,"transacoes"),{valor:p,descricao:`Estorno Fixo: ${monthly.clientName} (${monthly.dayName} ${monthly.time})`,data:fDate,tipo:'Despesa'})
+                        if (monthly) {
+                            const p = parseFloat(String(monthly.price || '0').replace('.', '').replace(',', '.'));
+                            await addDoc(getScopedCollectionRef("transacoes"), {
+                                valor: p,
+                                descricao: `Estorno Fixo: ${monthly.clientName} (${monthly.dayName} ${monthly.time})`,
+                                data: fDate,
+                                tipo: 'Despesa'
+                            });
                         }
                     }
-                    if(single)await deleteDoc(doc(db,'schedules',id));
-                    else if(monthly){
-                        const[,,time]=monthly.slotId.split('_'),dayName=monthly.dayName,key=`${dayName}_${time}`;
-                        await deleteDoc(doc(db,'monthlySchedules',key))
+
+                    // 2. EXCLUSÃO DO AGENDAMENTO
+                    if (single) {
+                        await deleteDoc(doc(getScopedCollectionRef('schedules'), id));
+                    } else if (monthly) {
+                        const [, , time] = monthly.slotId.split('_');
+                        const key = `${monthly.dayName}_${time}`;
+                        await deleteDoc(doc(getScopedCollectionRef('monthlySchedules'), key));
                     }
+
                     showToast("Agendamento cancelado.")
-                } catch(e) {
-                    showToast("Erro ao cancelar.",false)
+                } catch (e) {
+                    showToast("Erro ao cancelar.", false)
                 }
                 closeManagerModal()
             };
@@ -481,15 +792,11 @@
                 if (isCollapsed) { content.style.maxHeight = content.scrollHeight + "px"; icon.style.transform = 'rotate(0deg)'; } 
                 else { content.style.maxHeight = '0px'; icon.style.transform = 'rotate(180deg)'; }
             }
-            function updateManagerPanelsVisibility(animate = true) {
-                const shouldShowManager = viewToggle.checked;
-                managerPanels.classList.toggle('hidden', !shouldShowManager);
-                teamSorter.classList.toggle('hidden', shouldShowManager);
-                if (shouldShowManager) togglePanel(priceManagerContent, togglePriceManagerBtn.querySelector('i'), animate);
-                else togglePanel(teamSorterContent, toggleTeamSorterBtn.querySelector('i'), animate);
-            }
+            
             priceManagerHeader.addEventListener('click', () => togglePanel(priceManagerContent, togglePriceManagerBtn.querySelector('i')));
-            function initPriceManager(){const daySel=document.getElementById('day-selector'),apply=document.getElementById('apply-price-btn');daySel.innerHTML='';dayNames.forEach(name=>{const b=document.createElement('button');b.dataset.dayName=name;b.className='px-3 py-1.5 bg-gray-700 text-sm rounded-md hover:bg-gray-600';b.textContent=name;b.onclick=()=>b.classList.toggle('bg-custom-cyan')&b.classList.toggle('text-black')&b.classList.toggle('bg-gray-700');daySel.appendChild(b)});apply.onclick=async()=>{const price=document.getElementById('price-input').value.trim(),days=daySel.querySelectorAll('.bg-custom-cyan'),start=document.getElementById('start-time-input').value,end=document.getElementById('end-time-input').value;if(!price||days.length===0||!start||!end){showToast("Preencha todos os campos.",false);return}if(start>=end){showToast("Início deve ser antes do fim.",false);return}const rules=JSON.parse(JSON.stringify(priceRules));days.forEach(b=>{const day=b.dataset.dayName;if(!rules[day])rules[day]={};const all=Array.from(new Set([...defaultTimeSlots,...Object.keys(priceRules.default||{})]));all.forEach(s=>{const[sStart]=s.split(' - ');if(sStart>=start&&sStart<end){rules[day][s]=price}})});try{await setDoc(doc(db,"configurations","priceRules"),rules,{merge:true});showToast("Preços atualizados!")}catch(e){showToast("Erro ao guardar preços.",false)}}}
+            visualSettingsHeader.addEventListener('click', () => togglePanel(visualSettingsContent, toggleVisualSettingsBtn.querySelector('i')));
+
+            function initPriceManager(){const daySel=document.getElementById('day-selector'),apply=document.getElementById('apply-price-btn');daySel.innerHTML='';dayNames.forEach(name=>{const b=document.createElement('button');b.dataset.dayName=name;b.className='px-3 py-1.5 bg-gray-700 text-sm rounded-md hover:bg-gray-600';b.textContent=name;b.onclick=()=>b.classList.toggle('bg-custom-cyan')&b.classList.toggle('text-black')&b.classList.toggle('bg-gray-700');daySel.appendChild(b)});apply.onclick=async()=>{const price=document.getElementById('price-input').value.trim(),days=daySel.querySelectorAll('.bg-custom-cyan'),start=document.getElementById('start-time-input').value,end=document.getElementById('end-time-input').value;if(!price||days.length===0||!start||!end){showToast("Preencha todos os campos.",false);return}if(start>=end){showToast("Início deve ser antes do fim.",false);return}const rules=JSON.parse(JSON.stringify(priceRules));days.forEach(b=>{const day=b.dataset.dayName;if(!rules[day])rules[day]={};const all=Array.from(new Set([...defaultTimeSlots,...Object.keys(priceRules.default||{})]));all.forEach(s=>{const[sStart]=s.split(' - ');if(sStart>=start&&sStart<end){rules[day][s]=price}})});try{await setDoc(doc(getScopedCollectionRef('configurations'),"priceRules"),rules,{merge:true});showToast("Preços atualizados!")}catch(e){showToast("Erro ao guardar preços.",false)}}}
             
             function addPlayerInput(){const c=playerListContainer,div=document.createElement('div');div.className='flex items-center gap-2';const input=document.createElement('input');input.type='text';input.className='flex-grow bg-gray-900 border border-gray-700 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-custom-cyan';const btn=document.createElement('button');btn.className='p-1 text-gray-500 hover:text-red-400';btn.innerHTML='<i data-lucide="x-circle" class="h-5 w-5"></i>';btn.onclick=()=>(div.remove(),updatePlayerPlaceholders());div.appendChild(input);div.appendChild(btn);c.appendChild(div);updatePlayerPlaceholders();lucide.createIcons()}
             function updatePlayerPlaceholders(){document.querySelectorAll('#player-list-container input').forEach((i,idx)=>i.placeholder=`Jogador ${idx+1}`)}
@@ -502,21 +809,77 @@
             managerModal.addEventListener('click', e => { if (e.target === managerModal) closeModal(managerModal, managerModalContent); });
             clientPhoneInput.addEventListener('input', applyPhoneMask);
             managerPhoneInput.addEventListener('input', applyPhoneMask);
-            confirmButton.addEventListener('click',async()=>{if(!currentBookingData||!currentUser)return;const name=document.getElementById('name'),phone=document.getElementById('phone');if(!name.value||!phone.value){showToast("Preencha nome e telefone.",false);return}const expires=new Date();expires.setHours(expires.getHours()+2);const payload={status:'pending',expiresAt:expires,clientName:name.value,clientPhone:phone.value,type:'avulso',price:currentBookingData.price,userId:currentUser.uid};try{await setDoc(doc(db,'schedules',currentBookingData.slotId),payload);closeModal(bookingModal,bookingModalContent);openPixInfoModal()}catch(e){showToast("Erro ao pré-reservar.",false)}});
+
+            confirmButton.addEventListener('click', async () => {
+                if (!currentBookingData || !escolaId) return;
+
+                const name = document.getElementById('name');
+                const phone = document.getElementById('phone');
+
+                if (!name.value || !phone.value) {
+                    showToast("Preencha nome e telefone.", false);
+                    return;
+                }
+
+                const expires = new Date();
+                expires.setHours(expires.getHours() + 2);
+
+                const payload = {
+                    status: 'pending',
+                    expiresAt: expires.toISOString(),
+                    clientName: name.value,
+                    clientPhone: phone.value,
+                    type: 'avulso',
+                    price: currentBookingData.price,
+                };
+
+                try {
+                    await setDoc(doc(getScopedCollectionRef('schedules'), currentBookingData.slotId), payload);
+                    closeModal(bookingModal, bookingModalContent);
+                    openPixInfoModal();
+                } catch (e) {
+                    showToast("Erro ao pré-reservar.", false);
+                }
+            });
+
             copyPixKeyButton.addEventListener('click',()=>navigator.clipboard.writeText(pixKeyDisplay.textContent).then(()=>showToast("Chave PIX copiada!"),()=>showToast("Falha ao copiar.",false)));
+
             closePixInfoButton.addEventListener('click', () => closeModal(pixPaymentInfoModal, pixPaymentInfoModalContent));
             cancelDeclineButton.addEventListener('click', () => closeModal(cancelConfirmModal, cancelConfirmModalContent));
             cancelConfirmModal.addEventListener('click', e => { if (e.target === cancelConfirmModal) closeModal(cancelConfirmModal, cancelConfirmModalContent); });
-            cancelConfirmButton.addEventListener('click',async()=>{if(currentCancellationSlotId&&schedules[currentCancellationSlotId]){try{await deleteDoc(doc(db,'schedules',currentCancellationSlotId));closeModal(cancelConfirmModal,cancelConfirmModalContent);showToast('Pré-reserva cancelada.')}catch(e){showToast('Erro ao cancelar.',false)}}});
+           cancelConfirmButton.addEventListener('click', async () => {
+                if (currentCancellationSlotId && schedules[currentCancellationSlotId]) {
+                    try {
+                        await deleteDoc(doc(getScopedCollectionRef('schedules'), currentCancellationSlotId));
+                        closeModal(cancelConfirmModal, cancelConfirmModalContent);
+                        showToast('Pré-reserva cancelada.');
+                    } catch (e) {
+                        showToast('Erro ao cancelar.', false);
+                    }
+                }
+            });
+
             searchInput.addEventListener('input', () => renderFilteredDays(searchInput.value));
             viewToggle.addEventListener('change', () => { isManagerView = viewToggle.checked; updateManagerPanelsVisibility(); renderBasedOnCurrentView(); });
             teamSorterHeader.addEventListener('click', () => togglePanel(teamSorterContent, toggleTeamSorterBtn.querySelector('i')));
             addPlayerBtn.addEventListener('click', addPlayerInput);
-            sortTeamsBtn.addEventListener('click', ()=>{const players=Array.from(document.querySelectorAll('#player-list-container input')).map(i=>i.value.trim()).filter(Boolean),perTeam=parseInt(document.getElementById('players-per-team').value,10),numTeams=Math.floor(players.length/perTeam);if(players.length<perTeam*2){showToast("Jogadores insuficientes.",false);return}for(let i=players.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[players[i],players[j]]=[players[j],players[i]]}teamResults.innerHTML='';for(let i=0;i<numTeams;i++){const team=players.slice(i*perTeam,(i+1)*perTeam),div=document.createElement('div');div.className='space-y-2';const title=document.createElement('h5');title.className='font-bold text-custom-cyan text-center';title.textContent=`Time ${i+1}`;const list=document.createElement('ul');list.className='text-center';team.forEach(p=>{const li=document.createElement('li');li.textContent=p;list.appendChild(li)});div.appendChild(title);div.appendChild(list);teamResults.appendChild(div)}const rem=players.slice(numTeams*perTeam);if(rem.length>0){const div=document.createElement('div');div.className='space-y-2 col-span-full mt-4';const title=document.createElement('h5');title.className='font-bold text-yellow-400 text-center';title.textContent='Espera';const list=document.createElement('ul');list.className='text-center';rem.forEach(p=>{const li=document.createElement('li');li.textContent=p;list.appendChild(li)});div.appendChild(title);div.appendChild(list);teamResults.appendChild(div)}});
+            sortTeamsBtn.addEventListener('click', ()=>{const players=Array.from(document.querySelectorAll('#player-list-container input')).map(i=>i.value.trim()).filter(Boolean),perTeam=parseInt(document.getElementById('players-per-team').value,10),numTeams=Math.floor(players.length/perTeam);if(players.length<perTeam*2){showToast("Jogadores insuficientes.",false);return}for(let i=players.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[players[i],players[j]]=[players[j],players[i]]}teamResults.innerHTML='';for(let i=0;i<numTeams;i++){const team=players.slice(i*perTeam,(i+1)*perTeam),div=document.createElement('div');div.className='space-y-2';const title=document.createElement('h5');title.className='font-bold text-custom-cyan text-center';title.textContent=`Time ${i+1}`;const list=document.createElement('ul');list.className='text-center';team.forEach(p=>{const li=document.createElement('li');li.textContent=p;list.appendChild(li)});div.appendChild(title);div.appendChild(list);teamResults.appendChild(div)}const rem=players.slice(numTeams*perTeam);if(rem.length>0){const div=document.createElement('div');div.className='space-y-2 col-span-full mt-4';const title=document.createElement('h5');title.className='font-bold text-yellow-400 text-center';title.textContent='Espera';
+            
+            const list=document.createElement('ul');list.className='text-center';rem.forEach(p=>{const li=document.createElement('li');li.textContent=p;list.appendChild(li)});div.appendChild(title);div.appendChild(list);teamResults.appendChild(div)}});
             integratePaymentBtn.addEventListener('click', openPaymentModal);
             cancelPaymentBtn.addEventListener('click', () => closeModal(paymentModal, paymentModalContent));
             paymentModal.addEventListener('click', e => { if(e.target === paymentModal) closeModal(paymentModal, paymentModalContent)});
-            savePaymentBtn.addEventListener('click', async()=>{const key=document.getElementById('pix-key-input').value.trim();try{await setDoc(doc(db,"configurations","payment"),{pixKey:key});showToast("Chave PIX guardada!");closeModal(paymentModal,paymentModalContent)}catch(e){showToast("Erro ao guardar chave.",false)}});
+
+            savePaymentBtn.addEventListener('click', async()=>{
+                const key=document.getElementById('pix-key-input').value.trim();
+                try{
+                    await setDoc(doc(getScopedCollectionRef('configurations'), "payment"), {pixKey:key});
+                    showToast("Chave PIX guardada!");
+                    closeModal(paymentModal,paymentModalContent);
+                }catch(e){
+                    showToast("Erro ao guardar chave.",false)
+                }
+            });
             cancelAddSlotButton.addEventListener('click', () => closeModal(addSlotModal, addSlotModalContent));
             addSlotModal.addEventListener('click', e => { if (e.target === addSlotModal) closeModal(addSlotModal, addSlotModalContent); });
             confirmAddSlotButton.addEventListener('click', async () => {
@@ -530,10 +893,12 @@
                 if (!rules['default']) rules['default'] = {};
                 rules['default'][newSlot] = price;
                 try {
-                    await setDoc(doc(db, "configurations", "priceRules"), rules, { merge: true });
+                    await setDoc(doc(getScopedCollectionRef('configurations'), "priceRules"), rules, { merge: true });
                     showToast("Novo horário adicionado!");
                     closeModal(addSlotModal, addSlotModalContent);
-                } catch (e) { showToast("Erro ao guardar o novo horário.", false); }
+                } catch (e) { 
+                    showToast("Erro ao guardar o novo horário.", false); 
+                }
             });
 
             checkAccess();
@@ -541,4 +906,3 @@
     </script>
 </body>
 </html>
-
