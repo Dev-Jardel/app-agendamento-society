@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agendamento Society</title>
+    <title>Agendamento de Society</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -37,41 +37,40 @@
 </head>
 <body class="bg-dark-bg text-gray-200 font-sans antialiased">
 
-    <!-- LOGIN -->
-    <div id="login-screen" class="fixed inset-0 bg-dark-bg z-[150] flex items-center justify-center p-4">
-        <div class="w-full max-w-sm bg-dark-card p-8 rounded-xl border border-gray-700 shadow-2xl relative">
-            <div id="loading-overlay" class="absolute inset-0 bg-dark-card/90 z-10 flex items-center justify-center hidden rounded-xl">
-                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-custom-cyan"></div>
-            </div>
+    <!-- Ecrã de Erro (Sem Escola) -->
+    <div id="error-screen" class="fixed inset-0 bg-dark-bg z-[200] flex items-center justify-center p-4 hidden">
+        <div class="text-center max-w-md">
+            <i data-lucide="link-2-off" class="h-16 w-16 text-red-500 mx-auto mb-6"></i>
+            <h2 class="text-3xl font-bold text-white mb-2">Link Incompleto</h2>
+            <p class="text-gray-400">Não identificamos a escola neste link.</p>
+            <p class="text-sm text-gray-500 mt-4">Certifique-se de usar o link fornecido pelo Gestor FC.</p>
+        </div>
+    </div>
+
+    <!-- TELA DE LOGIN (BLINDADA) -->
+    <div id="login-screen" class="fixed inset-0 bg-dark-bg z-[150] flex items-center justify-center p-4 hidden">
+        <div class="w-full max-w-sm bg-dark-card p-8 rounded-xl border border-gray-700 shadow-2xl">
             <div class="text-center mb-8">
-                <div class="mx-auto h-12 w-12 bg-gray-800 rounded-full flex items-center justify-center mb-4"><i data-lucide="layout-grid" class="h-6 w-6 text-custom-cyan"></i></div>
-                <h2 class="text-2xl font-bold text-white">Gestão de Quadras</h2>
-                <p class="text-gray-400 text-sm mt-2">Sistema Independente</p>
+                <div class="mx-auto h-12 w-12 bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                    <i data-lucide="lock" class="h-6 w-6 text-custom-cyan"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white">Área do Gestor</h2>
+                <p class="text-gray-400 text-sm mt-2">Faça login para gerenciar a <span id="login-school-name" class="text-white font-semibold">quadra</span>.</p>
             </div>
+            
             <div class="space-y-4">
-                <input type="email" id="login-email" placeholder="Seu E-mail" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white focus:ring-custom-cyan focus:border-custom-cyan">
-                <input type="password" id="login-password" placeholder="Sua Senha" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white focus:ring-custom-cyan focus:border-custom-cyan">
-                <button id="login-btn" class="w-full py-3 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-90 transition-transform active:scale-95">Acessar Painel</button>
+                <input type="email" id="login-email" placeholder="E-mail" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white focus:ring-custom-cyan focus:border-custom-cyan">
+                <input type="password" id="login-password" placeholder="Senha" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white focus:ring-custom-cyan focus:border-custom-cyan">
+                <button id="login-btn" class="w-full py-3 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-90 transition-all transform active:scale-95">Entrar</button>
             </div>
             <p id="login-error" class="text-red-500 text-sm mt-4 text-center hidden"></p>
         </div>
     </div>
 
-    <!-- SETUP (CRIAR QUADRA) -->
-    <div id="setup-screen" class="fixed inset-0 bg-dark-bg z-[160] flex items-center justify-center p-4 hidden">
-        <div class="w-full max-w-md bg-dark-card p-8 rounded-xl border border-gray-700 shadow-2xl">
-            <h2 class="text-2xl font-bold text-white mb-2">Bem-vindo(a)! 🎉</h2>
-            <p class="text-gray-400 mb-6">Vamos configurar sua quadra.</p>
-            <div class="space-y-4">
-                <div><label class="block text-sm font-medium text-gray-300 mb-1">Nome da Quadra</label><input type="text" id="setup-name" placeholder="Ex: Arena Show de Bola" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 px-3 text-white"></div>
-                <div><label class="block text-sm font-medium text-gray-300 mb-1">Endereço</label><input type="text" id="setup-address" placeholder="Cidade/Bairro" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 px-3 text-white"></div>
-                <button id="create-arena-btn" class="w-full py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700">Criar Minha Quadra</button>
-            </div>
-        </div>
-    </div>
-
     <!-- APP PRINCIPAL -->
     <div id="app-container" class="hidden">
+    <div id="app" class="min-h-screen flex-col flex">
+        
         <header class="bg-dark-card/90 backdrop-blur-sm sticky top-0 z-20 border-b border-gray-800 shadow-md">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-20"> 
@@ -80,128 +79,166 @@
                             <i data-lucide="calendar-check" class="h-6 w-6 text-custom-cyan"></i>
                         </div>
                         <div class="flex flex-col">
-                            <h1 id="header-school-name" class="text-lg sm:text-xl font-bold tracking-tight text-white truncate">Carregando...</h1>
-                            <p id="header-school-address" class="text-xs text-gray-400 truncate max-w-[200px] sm:max-w-md flex items-center gap-1 hidden"><i data-lucide="map-pin" class="h-3 w-3"></i> <span></span></p>
+                            <h1 id="header-school-name" class="text-lg sm:text-xl font-bold tracking-tight text-white truncate">Agendamento Society</h1>
+                            <p id="header-school-address" class="text-xs text-gray-400 truncate max-w-[200px] sm:max-w-md flex items-center gap-1 hidden">
+                                <i data-lucide="map-pin" class="h-3 w-3"></i> <span></span>
+                            </p>
                         </div>
                     </div>
                     
-                    <div class="flex items-center gap-4">
-                        <div id="view-toggle-container" class="hidden items-center space-x-3 flex-shrink-0 ml-2">
-                            <span class="font-medium text-gray-300 text-sm sm:text-base">Cliente</span>
-                            <label for="view-toggle" class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" value="" id="view-toggle" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-custom-cyan peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-custom-cyan"></div>
-                            </label>
-                            <span class="font-medium text-white text-sm sm:text-base">Gestor</span>
-                        </div>
-                        
-                        <div id="admin-controls" class="hidden items-center">
-                             <button id="logout-btn" class="text-gray-400 hover:text-red-400 text-sm flex items-center gap-1 p-2 rounded hover:bg-gray-800" title="Sair">
-                                <i data-lucide="log-out" class="h-5 w-5"></i>
-                            </button>
-                        </div>
+                    <div id="admin-controls" class="hidden items-center gap-4">
+                         <button id="logout-btn" class="text-gray-400 hover:text-red-400 text-sm flex items-center gap-1" title="Sair">
+                            <i data-lucide="log-out" class="h-4 w-4"></i> <span class="hidden sm:inline">Sair</span>
+                        </button>
+                    </div>
+                    
+                    <div id="view-toggle-container" class="hidden items-center space-x-3 flex-shrink-0 ml-2">
+                        <span class="font-medium text-gray-300 text-sm sm:text-base">Cliente</span>
+                        <label for="view-toggle" class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" value="" id="view-toggle" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-custom-cyan peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-custom-cyan"></div>
+                        </label>
+                        <span class="font-medium text-white text-sm sm:text-base">Gestor</span>
                     </div>
                 </div>
             </div>
         </header>
 
-        <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+        <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            
             <!-- NAVEGAÇÃO -->
             <div class="flex items-center justify-center mb-8">
                 <button id="prev-week" class="flex items-center gap-2 p-2 rounded-lg hover:bg-dark-card transition-colors"><i data-lucide="chevron-left" class="h-6 w-6"></i></button>
-                <h2 id="week-display" class="text-xl sm:text-2xl font-semibold mx-4 sm:mx-8 w-64 text-center">...</h2>
+                <h2 id="week-display" class="text-xl sm:text-2xl font-semibold mx-4 sm:mx-8 w-64 text-center">Carregando...</h2>
                 <button id="next-week" class="flex items-center gap-2 p-2 rounded-lg hover:bg-dark-card transition-colors"><i data-lucide="chevron-right" class="h-6 w-6"></i></button>
             </div>
             
-            <div id="manager-panels" class="hidden">
+            <!-- BUSCA -->
+            <div class="mb-6">
+                <div class="relative max-w-sm mx-auto">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i data-lucide="search" class="h-5 w-5 text-gray-400"></i></div>
+                    <input type="text" id="search-input" placeholder="Pesquisar dia..." class="w-full bg-dark-card border border-gray-700 rounded-lg py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-custom-cyan">
+                </div>
+            </div>
+            
+            <div id="manager-panels">
                 <!-- DIVULGAÇÃO -->
-                <div id="share-panel" class="mb-8 p-6 bg-gradient-to-r from-dark-card to-gray-900 rounded-xl max-w-4xl mx-auto border border-gray-700">
-                    <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="share-2" class="h-6 w-6 text-custom-cyan"></i>Link de Agendamento</h3>
+                <div id="share-panel" class="mb-8 p-6 bg-gradient-to-r from-dark-card to-gray-900 rounded-xl max-w-4xl mx-auto border border-gray-700 hidden">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="share-2" class="h-6 w-6 text-custom-cyan"></i>Divulgue sua Agenda</h3>
                     <div class="flex flex-col sm:flex-row gap-3">
                         <div class="relative flex-grow">
                             <input type="text" id="share-link-input" readonly class="w-full bg-black/30 border border-gray-600 rounded-lg py-3 px-4 text-gray-300 text-sm font-mono focus:outline-none cursor-text select-all">
-                            <button id="copy-share-link" class="absolute right-2 top-2 p-1 bg-dark-card hover:bg-gray-600 rounded text-custom-cyan transition-colors" title="Copiar"><i data-lucide="copy" class="h-5 w-5"></i></button>
+                            <button id="copy-share-link" class="absolute right-2 top-2 p-1 bg-dark-card hover:bg-gray-600 rounded text-custom-cyan transition-colors"><i data-lucide="copy" class="h-5 w-5"></i></button>
                         </div>
-                        <button id="share-whatsapp-btn" class="flex items-center justify-center gap-2 py-2 px-5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors whitespace-nowrap"><i data-lucide="message-circle" class="h-5 w-5"></i>Enviar</button>
+                        <button id="share-whatsapp-btn" class="flex items-center justify-center gap-2 py-2 px-5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors whitespace-nowrap"><i data-lucide="message-circle" class="h-5 w-5"></i>Enviar no Zap</button>
                     </div>
                 </div>
 
-                <!-- CONFIGURAÇÕES -->
-                <div class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto border border-gray-700">
+                <!-- IDENTIDADE VISUAL (Com Upload) -->
+                <div id="visual-settings-panel" class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto border border-gray-700 hidden">
                     <div class="flex justify-between items-center cursor-pointer" id="visual-settings-header">
-                        <h3 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="settings" class="h-6 w-6 text-purple-400"></i>Configurações</h3>
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="palette" class="h-6 w-6 text-purple-400"></i>Identidade Visual</h3>
                         <button id="toggle-visual-settings" class="p-1 rounded-full hover:bg-dark-card-hover"><i data-lucide="chevron-up" class="h-6 w-6 transition-transform duration-300" style="transform: rotate(180deg);"></i></button>
                     </div>
                     <div id="visual-settings-content" class="mt-4 space-y-4">
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <div><label class="block text-sm font-medium text-gray-300 mb-1">Nome</label><input type="text" id="visual-name-input" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div>
-                            <div><label class="block text-sm font-medium text-gray-300 mb-1">Endereço</label><input type="text" id="visual-address-input" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div>
-                        </div>
+                        <div><label class="block text-sm font-medium text-gray-300 mb-1">Nome da Quadra</label><input type="text" id="visual-name-input" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div>
+                        <div><label class="block text-sm font-medium text-gray-300 mb-1">Endereço</label><input type="text" id="visual-address-input" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div>
+                        
+                        <!-- UPLOAD DE LOGO -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">Logo</label>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Logo (Imagem)</label>
                             <div class="flex items-center gap-4">
                                 <div id="logo-preview" class="h-16 w-16 bg-gray-800 rounded-full flex items-center justify-center border border-gray-600 overflow-hidden"><i data-lucide="image" class="h-6 w-6 text-gray-500"></i></div>
-                                <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors border border-gray-600">Alterar Logo<input type="file" id="visual-logo-upload" accept="image/*" class="hidden"></label>
+                                <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors border border-gray-600">Escolher Arquivo<input type="file" id="visual-logo-upload" accept="image/*" class="hidden"></label>
                             </div>
                         </div>
-                         <div><label class="block text-sm font-medium text-gray-300 mb-1">Chave PIX</label><input type="text" id="visual-pix-input" placeholder="CPF, Email, Telefone..." class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div>
-                        <div class="flex justify-end pt-2"><button id="save-visual-btn" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold transition-colors">Salvar Tudo</button></div>
-                    </div>
-                </div>
-                
-                <!-- PREÇOS (Recriado e Corrigido) -->
-                <div class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto">
-                    <div class="flex justify-between items-center cursor-pointer" id="price-manager-header">
-                        <h3 class="text-xl font-bold text-white">Adicionar Horários</h3>
-                        <button id="toggle-price-manager" class="p-1 rounded-full hover:bg-dark-card-hover"><i data-lucide="chevron-up" class="h-6 w-6 transition-transform duration-300" style="transform: rotate(180deg);"></i></button>
-                    </div>
-                    <div id="price-manager-content" class="mt-4">
-                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-300 mb-2">1. Selecione os Dias</label>
-                            <div id="day-selector" class="flex flex-wrap gap-2">
-                                <!-- Botões gerados via JS -->
-                            </div>
-                         </div>
-                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">2. Horário</label>
-                                <div class="flex items-center gap-2"><input type="time" id="start-time-input" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"><span class="text-gray-400">até</span><input type="time" id="end-time-input" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">3. Preço (R$)</label>
-                                <input type="text" id="price-input" placeholder="150,00" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white">
-                            </div>
-                         </div>
-                         <button id="apply-price-btn" class="w-full md:w-auto px-6 py-2 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80 transition-colors">Adicionar Horário</button>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">E-mail do Gestor (Segurança)</label>
+                            <input type="text" id="visual-admin-email-input" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white">
+                            <p class="text-xs text-yellow-500 mt-1">Apenas este e-mail poderá acessar o painel.</p>
+                        </div>
+                        <div class="flex justify-end pt-2"><button id="save-visual-btn" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold transition-colors">Salvar Configurações</button></div>
                     </div>
                 </div>
 
-                <div id="next-event-dashboard" class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto border border-custom-cyan/50">
-                    <h3 class="text-xl font-bold text-white mb-4 flex items-center"><i data-lucide="bell-ring" class="h-6 w-6 mr-3 text-custom-cyan"></i>Próximo Jogo</h3>
-                    <div id="next-event-details"><p class="text-gray-400">Nenhum agendamento encontrado.</p></div>
+                <!-- PREÇOS -->
+                <div id="price-manager" class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto">
+                    <div class="flex justify-between items-center cursor-pointer" id="price-manager-header">
+                        <h3 class="text-xl font-bold text-white">Gerir Preços</h3>
+                        <button id="toggle-price-manager" class="p-1 rounded-full hover:bg-dark-card-hover"><i data-lucide="chevron-up" class="h-6 w-6 transition-transform duration-300" style="transform: rotate(180deg);"></i></button>
+                    </div>
+                    <div id="price-manager-content" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
+                        <div class="lg:col-span-3"><label class="block text-sm font-medium text-gray-300 mb-2">1. Selecione os dias</label><div id="day-selector" class="flex flex-wrap gap-2"></div></div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">2. Intervalo</label>
+                            <div class="flex items-center gap-4"><input type="time" id="start-time-input" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"><span class="text-gray-400">até</span><input type="time" id="end-time-input" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div>
+                        </div>
+                        <div class="flex gap-4 items-end">
+                            <div class="flex-grow"><label class="block text-sm font-medium text-gray-300 mb-2">3. Preço (R$)</label><input type="text" id="price-input" placeholder="150,00" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div>
+                             <button id="apply-price-btn" class="flex-shrink-0 h-10 px-5 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80 transition-colors">Aplicar</button>
+                        </div>
+                        <div class="lg:col-span-3 mt-4 pt-4 border-t border-gray-700 space-y-4">
+                            <button id="integrate-payment-btn" class="w-full flex items-center justify-center gap-2 h-10 px-5 bg-transparent border-2 border-custom-cyan text-custom-cyan rounded-lg font-bold hover:bg-custom-cyan hover:text-black transition-colors"><i data-lucide="credit-card" class="h-5 w-5"></i>Integrar Meios de Pagamento</button>
+                            <div class="flex items-center justify-between p-3 bg-dark-bg/50 rounded-lg">
+                                <label for="sync-toggle" class="flex flex-col"><span class="font-medium text-gray-200">Sincronizar com Financeiro</span><span class="text-xs text-gray-400">(Gestor FC)</span></label>
+                                <label for="sync-toggle" class="relative inline-flex items-center cursor-pointer"><input type="checkbox" value="" id="sync-toggle" class="sr-only peer" checked><div class="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-custom-cyan peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-custom-cyan"></div></label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div id="next-event-dashboard" class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto border border-custom-cyan/50 hidden">
+                <h3 class="text-xl font-bold text-white mb-4 flex items-center"><i data-lucide="bell-ring" class="h-6 w-6 mr-3 text-custom-cyan"></i>Próximo Evento</h3>
+                <div id="next-event-details"><p class="text-gray-400">Nenhum agendamento futuro encontrado.</p></div>
             </div>
 
             <!-- KANBAN -->
             <div id="kanban-board" class="kanban-container flex gap-4 overflow-x-auto pb-4"></div>
+
+            <!-- SORTEIO -->
+            <div id="team-sorter" class="mt-10 bg-dark-card rounded-xl p-6 max-w-4xl mx-auto hidden">
+                <div id="team-sorter-header" class="flex justify-between items-center cursor-pointer">
+                    <h3 class="text-2xl font-bold text-white">Sorteio de Times</h3>
+                    <button id="toggle-team-sorter" class="p-1 rounded-full hover:bg-dark-card-hover"><i data-lucide="chevron-up" class="h-6 w-6 transition-transform duration-300" style="transform: rotate(180deg);"></i></button>
+                </div>
+                <div id="team-sorter-content" class="mt-6">
+                    <!-- Conteúdo do Sorteio simplificado para poupar espaço -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center"><label class="text-sm font-medium text-gray-300">Jogadores</label><button id="add-player-btn" class="text-custom-cyan text-sm"><i data-lucide="plus-circle" class="inline h-4 w-4"></i> Add</button></div>
+                        <div id="player-list-container" class="space-y-2 max-h-[200px] overflow-y-auto"></div>
+                        <select id="players-per-team" class="w-full bg-gray-900 border-gray-700 rounded-md py-2 px-3 text-white"><option value="5" selected>5 jogadores</option><option value="6">6 jogadores</option></select>
+                        <button id="sort-teams-btn" class="w-full h-10 bg-custom-cyan text-black rounded-lg font-bold">Sortear</button>
+                        <div id="team-results" class="grid grid-cols-2 gap-4 mt-4"></div>
+                    </div>
+                </div>
+            </div>
         </main>
         
-        <footer class="fixed bottom-0 w-full p-2 text-center bg-dark-bg/90 backdrop-blur text-xs text-gray-600 border-t border-gray-800 pointer-events-none">Sistema Society</footer>
+        <footer class="mt-auto p-4 text-center text-sm text-gray-500">Desenvolvido por Jardel Feitosa</footer>
+    </div>
     </div>
 
-    <!-- Modais e Toast -->
-    <div id="toast-notification" class="fixed bottom-12 right-5 bg-dark-card border-l-4 border-custom-cyan text-white p-4 rounded-lg shadow-lg flex items-center gap-4 max-w-sm transition-all duration-500 transform translate-x-[calc(100%+20px)] opacity-0 z-[200]"><div id="toast-icon"></div><p id="toast-message" class="text-sm"></p></div>
-    
-    <div id="booking-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[210] hidden"><div class="bg-dark-card rounded-xl p-8 w-full max-w-md m-4 transform transition-all scale-95 opacity-0"><h3 class="text-2xl font-bold text-white mb-2">Confirmar</h3><p id="modal-details" class="text-gray-400 mb-6"></p><div class="space-y-4"><input type="text" id="name" placeholder="Seu Nome" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"><input type="tel" id="phone" placeholder="WhatsApp" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div><div class="mt-8 flex justify-end gap-4"><button id="cancel-button" class="py-2 px-5 bg-gray-700 rounded-lg text-white">Voltar</button><button id="confirm-button" class="py-2 px-5 bg-custom-cyan text-black rounded-lg font-bold">Confirmar</button></div></div></div>
-    
-    <div id="pix-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[220] hidden"><div class="bg-dark-card rounded-xl p-8 w-full max-w-md m-4 text-center transform transition-all scale-95 opacity-0"><i data-lucide="check-circle" class="h-12 w-12 text-green-400 mx-auto mb-4"></i><h3 class="text-2xl font-bold text-white">Pré-reserva feita!</h3><p class="text-gray-400 my-4">Faça o PIX para garantir.</p><div class="bg-dark-bg/50 p-4 rounded-lg"><p class="text-sm text-gray-300">Chave:</p><p id="pix-key-display" class="font-mono text-lg text-custom-cyan break-all">Selecione no Config</p></div><button id="close-pix-btn" class="mt-6 w-full py-2 bg-custom-cyan text-black rounded-lg font-bold">Entendido</button></div></div>
+    <!-- Modais (Simplificados e Corrigidos) -->
+    <div id="toast-notification" class="fixed bottom-5 right-5 bg-dark-card border-l-4 border-custom-cyan text-white p-4 rounded-lg shadow-lg flex items-center gap-4 max-w-sm transition-all duration-500 transform translate-x-[calc(100%+20px)] opacity-0 z-[101]"><div id="toast-icon"></div><p id="toast-message" class="text-sm"></p></div>
 
-    <div id="cancel-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[230] hidden"><div class="bg-dark-card rounded-xl p-8 w-full max-w-sm m-4 transform transition-all scale-95 opacity-0"><h3 class="text-xl font-bold text-white mb-4">Cancelar?</h3><div class="flex justify-end gap-4"><button id="cancel-no" class="py-2 px-5 bg-gray-700 rounded-lg text-white">Não</button><button id="cancel-yes" class="py-2 px-5 bg-red-600 text-white rounded-lg font-bold">Sim, cancelar</button></div></div></div>
+    <div id="booking-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden"><div class="bg-dark-card rounded-xl p-8 w-full max-w-md m-4 transform transition-all scale-95 opacity-0"><h3 class="text-2xl font-bold text-white mb-2">Confirmar</h3><p id="modal-details" class="text-gray-400 mb-6"></p><div class="space-y-4"><input type="text" id="name" placeholder="Nome" class="w-full bg-gray-900 border-gray-700 rounded-md py-2 px-3 text-white"><input type="tel" id="phone" placeholder="WhatsApp" class="w-full bg-gray-900 border-gray-700 rounded-md py-2 px-3 text-white"></div><div class="mt-8 flex justify-end gap-4"><button id="cancel-button" class="py-2 px-5 bg-gray-700 rounded-lg">Cancelar</button><button id="confirm-button" class="py-2 px-5 bg-custom-cyan text-black rounded-lg font-bold">Confirmar</button></div></div></div>
 
+    <div id="pix-payment-info-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden"><div class="bg-dark-card rounded-xl p-8 w-full max-w-md m-4 text-center transform transition-all scale-95 opacity-0"><i data-lucide="check-circle" class="h-12 w-12 text-green-400 mx-auto mb-4"></i><h3 class="text-2xl font-bold text-white">Pré-reserva OK!</h3><p class="text-gray-400 mb-6">Pague via PIX para garantir.</p><div class="bg-dark-bg/50 p-4 rounded-lg"><p class="text-sm text-gray-300">Chave:</p><p id="pix-key-display" class="font-mono text-lg text-custom-cyan break-all"></p></div><button id="close-pix-info-button" class="mt-4 w-full py-2 text-gray-400 hover:text-white">Entendido</button></div></div>
+
+    <div id="cancel-confirm-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden"><div class="bg-dark-card rounded-xl p-8 w-full max-w-sm m-4 transform transition-all scale-95 opacity-0"><h3 class="text-xl font-bold text-white mb-4">Cancelar?</h3><div class="flex justify-end gap-4"><button id="cancel-decline-button" class="py-2 px-5 bg-gray-700 rounded-lg">Voltar</button><button id="cancel-confirm-button" class="py-2 px-5 bg-red-600 text-white rounded-lg font-bold">Sim</button></div></div></div>
+
+    <div id="payment-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden"><div class="bg-dark-card rounded-xl p-8 w-full max-w-md m-4 transform transition-all scale-95 opacity-0"><h3 class="text-2xl font-bold text-white mb-2">Configurar PIX</h3><input type="text" id="pix-key-input" placeholder="Chave Pix" class="w-full bg-gray-900 border-gray-700 rounded-md py-2 px-3 text-white mt-4"><div class="mt-8 flex justify-end gap-4"><button id="cancel-payment-button" class="py-2 px-5 bg-gray-700 rounded-lg">Cancelar</button><button id="save-payment-button" class="py-2 px-5 bg-custom-cyan text-black rounded-lg font-bold">Salvar</button></div></div></div>
+    
+    <div id="manager-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden"><div class="bg-dark-card rounded-xl p-8 w-full max-w-md m-4 transform transition-all scale-95 opacity-0"><h3 id="manager-modal-title" class="text-2xl font-bold text-white mb-2"></h3><div id="manager-view-container"><div id="manager-modal-details" class="text-gray-300 mb-6 py-4"></div></div><div id="manager-form-container" class="hidden"><p id="manager-form-details" class="text-gray-400 mb-4"></p><input type="text" id="manager-name" placeholder="Cliente" class="w-full bg-gray-900 border-gray-700 rounded-md py-2 px-3 text-white mb-2"><input type="tel" id="manager-phone" placeholder="Telefone" class="w-full bg-gray-900 border-gray-700 rounded-md py-2 px-3 text-white"></div><div id="manager-actions" class="mt-6 flex flex-wrap justify-end gap-4"></div></div></div>
+
+    <!-- Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDcY1-29jWmbnpBDePgAmJfWhr79Nsl7Ug",
@@ -212,122 +249,151 @@
             appId: "1:643691351263:web:6ad71343afed3a0305ad6a",
             measurementId: "G-BZQ57SN00Q"
         };
-        
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // --- GESTÃO DE ESTADO E ROTEAMENTO ---
-        let currentArenaId = new URLSearchParams(window.location.search).get('arenaId');
-        let currentUser = null;
-        let isManagerView = false;
-        let arenaData = null; // Dados da quadra carregados
-        let schedules = {};
-        let currentLogoBase64 = null; // Para upload
-        
-        const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-        let currentMonday = getMonday(new Date());
+        // --- LÓGICA INTEGRADA (Recuperada) ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const escolaId = urlParams.get('escolaId');
+        const userRole = urlParams.get('role');
 
-        // UI References
-        const loginScreen = document.getElementById('login-screen');
-        const setupScreen = document.getElementById('setup-screen');
-        const appContainer = document.getElementById('app-container');
-        const loadingOverlay = document.getElementById('loading-overlay');
+        if (!escolaId) { document.getElementById('error-screen').classList.remove('hidden'); throw new Error("Sem Escola ID"); }
+
+        function getScopedCollectionRef(colName) {
+            return collection(doc(db, 'escolas', escolaId), colName);
+        }
+
+        let adminEmailRequired = null;
+        let isManagerView = false;
+        let currentUser = null;
+        let schedules = {}, monthlySchedules = {}, priceRules = {}, paymentConfig = {};
+        let currentLogoBase64 = null;
+        let syncWithFinance = localStorage.getItem('syncWithFinance') !== 'false';
         
-        // --- 1. SISTEMA DE LOGIN INTELIGENTE ---
-        
-        onAuthStateChanged(auth, async (user) => {
-            currentUser = user;
-            if (currentArenaId) {
-                // Com ID na URL: carrega a arena
-                if (!user) signInAnonymously(auth); 
-                loadArena(currentArenaId);
-                // Define visão inicial baseado no dono
-                if(user && !user.isAnonymous) checkOwner(user.email, currentArenaId);
-                else showApp(false);
-            } else {
-                // Sem ID na URL: Login ou Busca
-                if (user && !user.isAnonymous) {
-                    findUserArena(user.email);
-                } else {
-                    loginScreen.classList.remove('hidden');
+        // UI
+        const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+        let currentWeekStart = getMonday(new Date());
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load Admin Settings First
+            getDoc(doc(getScopedCollectionRef('configurations'), 'visualIdentity')).then(snap => {
+                if(snap.exists()) {
+                    const data = snap.data();
+                    adminEmailRequired = data.adminEmail;
+                    applyVisual(data);
+                    // Preenche campos
+                    document.getElementById('visual-name-input').value = data.name || '';
+                    document.getElementById('visual-address-input').value = data.address || '';
+                    document.getElementById('visual-admin-email-input').value = data.adminEmail || '';
+                    if(data.logoUrl) currentLogoBase64 = data.logoUrl;
                 }
-            }
+                initAuth();
+            });
+
+            // Listeners
+            setupFirestore();
+            initPriceManager();
+            lucide.createIcons();
+            
+            // Login Logic
+            document.getElementById('login-btn').onclick = () => {
+                const e = document.getElementById('login-email').value;
+                const p = document.getElementById('login-password').value;
+                if(adminEmailRequired && e !== adminEmailRequired) { alert("Email não autorizado"); return; }
+                signInWithEmailAndPassword(auth, e, p).catch(() => alert("Erro login"));
+            };
+            document.getElementById('logout-btn').onclick = () => signOut(auth).then(()=>location.reload());
+            
+            // Upload Logic (Restaurada)
+            document.getElementById('visual-logo-upload').onchange = (e) => {
+                const file = e.target.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const max = 300; 
+                        let w = img.width, h = img.height;
+                        if(w>h){ if(w>max){h*=max/w; w=max;}} else { if(h>max){w*=max/h; h=max;}}
+                        canvas.width=w; canvas.height=h;
+                        ctx.drawImage(img,0,0,w,h);
+                        currentLogoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                        document.getElementById('logo-preview').innerHTML = `<img src="${currentLogoBase64}" class="w-full h-full object-cover">`;
+                    };
+                    img.src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+
+            document.getElementById('save-visual-btn').onclick = async () => {
+                const name = document.getElementById('visual-name-input').value;
+                const addr = document.getElementById('visual-address-input').value;
+                const email = document.getElementById('visual-admin-email-input').value;
+                try {
+                    await setDoc(doc(getScopedCollectionRef('configurations'), 'visualIdentity'), {
+                        name, address: addr, adminEmail: email, logoUrl: currentLogoBase64
+                    });
+                    alert("Salvo!");
+                    applyVisual({name, address: addr, logoUrl: currentLogoBase64});
+                } catch(e) { console.error(e); alert("Erro ao salvar"); }
+            };
+
+            // Toggle Views
+            document.getElementById('view-toggle').onchange = (e) => showApp(e.target.checked);
+            
+            // Navigation
+            document.getElementById('prev-week').onclick = () => { currentWeekStart.setDate(currentWeekStart.getDate()-7); renderKanban(); };
+            document.getElementById('next-week').onclick = () => { currentWeekStart.setDate(currentWeekStart.getDate()+7); renderKanban(); };
+
+            // Modais e Cancelamento
+            setupModals();
         });
 
-        async function findUserArena(email) {
-            loadingOverlay.classList.remove('hidden');
-            const q = query(collection(db, 'arenas'), where('adminEmail', '==', email));
-            const snapshot = await getDocs(q);
-            
-            if (!snapshot.empty) {
-                const doc = snapshot.docs[0];
-                currentArenaId = doc.id;
-                const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?arenaId=' + currentArenaId;
-                window.history.pushState({path:newUrl},'',newUrl);
-                loadArena(currentArenaId);
-                showApp(true);
-            } else {
-                loadingOverlay.classList.add('hidden');
-                loginScreen.classList.add('hidden');
-                setupScreen.classList.remove('hidden');
-            }
-        }
-        
-        async function checkOwner(email, arenaId) {
-            getDoc(doc(db, 'arenas', arenaId)).then(snap => {
-                if(snap.exists() && snap.data().adminEmail === email) showApp(true);
-                else showApp(false);
-            });
-        }
-
-        // --- 2. LOGIC PRINCIPAL ---
-
-        function loadArena(id) {
-            // Monitora Configurações e Preços
-            onSnapshot(doc(db, 'arenas', id), (docSnap) => {
-                if (docSnap.exists()) {
-                    arenaData = docSnap.data();
-                    updateUIIdentity(arenaData);
-                    if(isManagerView) populateSettings(arenaData);
-                    renderKanban(); // Força render ao carregar regras
+        function initAuth() {
+            onAuthStateChanged(auth, user => {
+                currentUser = user;
+                if(userRole === 'admin') {
+                    if(!user || (adminEmailRequired && user.email !== adminEmailRequired)) {
+                        document.getElementById('login-screen').classList.remove('hidden');
+                        document.getElementById('app-container').classList.add('hidden');
+                    } else {
+                        document.getElementById('login-screen').classList.add('hidden');
+                        showApp(true);
+                    }
+                } else {
+                    if(!user) signInAnonymously(auth);
+                    showApp(false);
                 }
-            });
-
-            // Monitora Agendamentos
-            onSnapshot(collection(db, 'arenas', id, 'agendamentos'), (snap) => {
-                schedules = {};
-                snap.forEach(d => schedules[d.id] = d.data());
-                renderKanban();
             });
         }
 
         function showApp(isManager) {
             isManagerView = isManager;
-            loginScreen.classList.add('hidden');
-            setupScreen.classList.add('hidden');
-            loadingOverlay.classList.add('hidden');
-            appContainer.classList.remove('hidden');
-            
-            const adminControls = document.getElementById('admin-controls');
-            const viewToggleContainer = document.getElementById('view-toggle-container');
-            const managerPanels = document.getElementById('manager-panels');
-
-            if (isManager) {
-                adminControls.classList.remove('hidden');
-                viewToggleContainer.classList.remove('hidden');
-                viewToggleContainer.classList.add('flex');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('manager-panels').classList.toggle('hidden', !isManager);
+            document.getElementById('admin-controls').classList.toggle('hidden', !isManager);
+            document.getElementById('view-toggle-container').classList.toggle('hidden', !isManager);
+            if(isManager) {
                 document.getElementById('view-toggle').checked = true;
-                managerPanels.classList.remove('hidden');
-                initPriceManager();
-                setupShareLink();
-            } else {
-                adminControls.classList.add('hidden');
-                viewToggleContainer.classList.add('hidden');
-                managerPanels.classList.add('hidden');
+                setupSharePanel();
             }
             renderKanban();
-            lucide.createIcons();
+        }
+
+        function setupFirestore() {
+            onSnapshot(getScopedCollectionRef('schedules'), snap => {
+                schedules = {}; snap.forEach(d => schedules[d.id] = d.data()); renderKanban();
+            });
+            onSnapshot(doc(getScopedCollectionRef('configurations'), 'priceRules'), snap => {
+                priceRules = snap.exists() ? snap.data() : { default: {'18:00 - 19:00': '100,00'} };
+                renderKanban();
+            });
+            onSnapshot(doc(getScopedCollectionRef('configurations'), 'payment'), snap => {
+                paymentConfig = snap.exists() ? snap.data() : { pixKey: '' };
+            });
         }
 
         function renderKanban() {
@@ -335,260 +401,181 @@
             if(!board) return;
             board.innerHTML = '';
             
-            const startDate = new Date(currentMonday);
-            const endWeek = new Date(startDate); endWeek.setDate(endWeek.getDate()+6);
-            document.getElementById('week-display').textContent = `${startDate.getDate()}/${startDate.getMonth()+1} - ${endWeek.getDate()}/${endWeek.getMonth()+1}`;
+            const start = new Date(currentWeekStart);
+            const end = new Date(start); end.setDate(end.getDate()+6);
+            document.getElementById('week-display').textContent = `${start.getDate()}/${start.getMonth()+1} - ${end.getDate()}/${end.getMonth()+1}`;
 
             for(let i=0; i<7; i++) {
-                const date = new Date(startDate);
-                date.setDate(date.getDate() + i);
+                const date = new Date(start); date.setDate(date.getDate()+i);
                 const dayName = dayNames[date.getDay()];
                 const dateStr = date.toISOString().split('T')[0];
                 
                 const col = document.createElement('div');
                 col.className = 'w-72 flex-shrink-0 bg-dark-card rounded-xl border border-gray-700 p-4';
-                const isToday = dateStr === new Date().toISOString().split('T')[0];
-                const todayBadge = isToday ? '<span class="ml-2 text-xs bg-custom-cyan text-black px-2 py-0.5 rounded font-bold">HOJE</span>' : '';
-                col.innerHTML = `<h3 class="font-bold mb-4 flex items-center">${dayName} ${todayBadge} <span class="ml-auto text-gray-500 text-sm">${date.getDate()}/${date.getMonth()+1}</span></h3>`;
+                col.innerHTML = `<h3 class="font-bold mb-4">${dayName} <span class="text-sm text-gray-400">${date.getDate()}/${date.getMonth()+1}</span></h3>`;
                 
-                const slotsContainer = document.createElement('div');
-                slotsContainer.className = 'space-y-3';
+                const slotsDiv = document.createElement('div');
+                slotsDiv.className = 'space-y-3';
                 
-                // Pega regras do dia ou default
-                let rules = {};
-                if(arenaData && arenaData.priceRules) {
-                    rules = arenaData.priceRules[dayName] || arenaData.priceRules['default'] || {};
-                }
-                // Fallback visual se não tiver regra nenhuma
-                if(Object.keys(rules).length === 0) rules = {'18:00 - 19:00': '00,00', '19:00 - 20:00': '00,00'};
-                
-                const sortedSlots = Object.keys(rules).sort();
-                
-                sortedSlots.forEach(time => {
+                const rules = priceRules[dayName] || priceRules.default || {};
+                Object.keys(rules).sort().forEach(time => {
+                    const id = `${dateStr}_${time}`;
+                    const b = schedules[id];
                     const price = rules[time];
-                    const slotId = `${dateStr}_${time}`;
-                    const booking = schedules[slotId];
                     
                     const btn = document.createElement('button');
-                    btn.className = 'w-full text-left p-3 rounded-lg transition-all border border-transparent relative overflow-hidden';
+                    btn.className = 'w-full text-left p-3 rounded-lg border border-transparent';
                     
-                    if (booking) {
-                        if(isManagerView) {
-                            btn.className += ' bg-red-900/30 border-red-500/30 hover:bg-red-900/50';
-                            btn.innerHTML = `<div class="flex justify-between text-red-200 font-bold"><span>${time}</span><span>Reservado</span></div><div class="text-xs text-red-300 mt-1 truncate">${booking.clientName}</div>`;
-                            btn.onclick = () => openCancelModal(slotId);
-                        } else {
-                            btn.disabled = true;
-                            btn.className += ' bg-gray-800 opacity-50 cursor-not-allowed';
-                            btn.innerHTML = `<div class="flex justify-between text-gray-500"><span>${time}</span><span>Ocupado</span></div>`;
-                        }
-                    } else {
-                        btn.className += ' bg-dark-card-hover hover:bg-custom-cyan hover:text-black group';
-                        btn.innerHTML = `<div class="flex justify-between font-semibold"><span>${time}</span><span class="text-custom-cyan group-hover:text-black font-bold">R$ ${price}</span></div>`;
-                        btn.onclick = () => openBookingModal(slotId, time, price, dateStr, dayName);
+                    if(b) { // Reservado
+                         if(isManagerView) {
+                             btn.className += ' bg-red-900/30 border-red-500/30';
+                             btn.innerHTML = `<div class="font-bold text-red-200">${time} - Reservado</div><div class="text-xs text-red-300">${b.clientName}</div>`;
+                             btn.onclick = () => openCancelModal(id);
+                         } else {
+                             btn.className += ' bg-gray-800 opacity-50 cursor-not-allowed';
+                             btn.innerHTML = `<div class="text-gray-500">${time} - Ocupado</div>`;
+                         }
+                    } else { // Livre
+                        btn.className += ' bg-dark-card-hover hover:bg-custom-cyan hover:text-black';
+                        btn.innerHTML = `<div class="font-semibold flex justify-between"><span>${time}</span><span>R$ ${price}</span></div>`;
+                        btn.onclick = () => openBookingModal(id, time, price, dateStr, dayName);
                     }
-                    slotsContainer.appendChild(btn);
+                    slotsDiv.appendChild(btn);
                 });
-                
-                col.appendChild(slotsContainer);
+                col.appendChild(slotsDiv);
                 board.appendChild(col);
             }
         }
 
-        // --- PREÇOS E CONFIG ---
-
-        function initPriceManager() {
-            const container = document.getElementById('day-selector');
-            if(container.innerHTML.trim() !== "") return; // Já iniciou
-            
-            dayNames.forEach(day => {
-                const btn = document.createElement('button');
-                btn.textContent = day;
-                btn.className = 'px-3 py-1 rounded bg-gray-800 text-gray-400 text-sm hover:bg-gray-700 border border-gray-700 transition-colors';
-                btn.onclick = () => {
-                    btn.classList.toggle('bg-custom-cyan');
-                    btn.classList.toggle('text-black');
-                    btn.classList.toggle('bg-gray-800');
-                    btn.classList.toggle('text-gray-400');
-                };
-                container.appendChild(btn);
-            });
-        }
-        
-        document.getElementById('apply-price-btn').addEventListener('click', async () => {
-            const price = document.getElementById('price-input').value;
-            const start = document.getElementById('start-time-input').value;
-            const end = document.getElementById('end-time-input').value;
-            const activeDays = Array.from(document.querySelectorAll('#day-selector .bg-custom-cyan')).map(b => b.textContent);
-            
-            if(!price || !start || !end || activeDays.length === 0) return showToast("Selecione dias, horário e preço", false);
-            
-            const timeKey = `${start} - ${end}`;
-            const update = {};
-            
-            activeDays.forEach(day => {
-                update[`priceRules.${day}.${timeKey}`] = price;
-            });
-            
-            try {
-                await updateDoc(doc(db, 'arenas', currentArenaId), update);
-                showToast("Horários adicionados!");
-            } catch(e) { showToast("Erro ao salvar", false); console.error(e);}
-        });
-
-        // --- EVENT LISTENERS GERAIS ---
-
-        document.getElementById('login-btn').addEventListener('click', () => {
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-password').value;
-            loadingOverlay.classList.remove('hidden');
-            signInWithEmailAndPassword(auth, email, pass).catch(err => {
-                loadingOverlay.classList.add('hidden');
-                document.getElementById('login-error').textContent = "Erro ao entrar.";
-                document.getElementById('login-error').classList.remove('hidden');
-            });
-        });
-
-        document.getElementById('create-arena-btn').addEventListener('click', async () => {
-            const name = document.getElementById('setup-name').value;
-            const address = document.getElementById('setup-address').value;
-            if(!name) return alert("Nome obrigatório");
-            
-            try {
-                const docRef = await addDoc(collection(db, 'arenas'), {
-                    name, address, adminEmail: currentUser.email,
-                    priceRules: { 'default': { '18:00 - 19:00': '100,00', '19:00 - 20:00': '100,00' } }
-                });
-                currentArenaId = docRef.id;
-                window.location.search = `?arenaId=${currentArenaId}`;
-            } catch(e) { alert("Erro ao criar"); }
-        });
-
-        document.getElementById('save-visual-btn').addEventListener('click', async () => {
-            const name = document.getElementById('visual-name-input').value;
-            const addr = document.getElementById('visual-address-input').value;
-            const pix = document.getElementById('visual-pix-input').value;
-            try {
-                await updateDoc(doc(db, 'arenas', currentArenaId), { name, address: addr, pixKey: pix, logo: currentLogoBase64 });
-                showToast("Salvo!");
-            } catch(e) { showToast("Erro", false); }
-        });
-        
-        // Upload Logo
-        document.getElementById('visual-logo-upload').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    const max = 200; 
-                    let w = img.width, h = img.height;
-                    if(w>h){ if(w>max){h*=max/w; w=max;}} else { if(h>max){w*=max/h; h=max;}}
-                    canvas.width=w; canvas.height=h;
-                    ctx.drawImage(img,0,0,w,h);
-                    currentLogoBase64 = canvas.toDataURL('image/jpeg', 0.8);
-                    document.getElementById('logo-preview').innerHTML = `<img src="${currentLogoBase64}" class="w-full h-full object-cover">`;
-                };
-                img.src = evt.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-
-        // Toggle Painéis
-        const toggle = (btnId, contentId) => {
-            document.getElementById(btnId).onclick = () => {
-                const c = document.getElementById(contentId);
-                const icon = document.getElementById(btnId).querySelector('i');
-                if(c.style.maxHeight && c.style.maxHeight !== '0px') {
-                    c.style.maxHeight = '0px';
-                    icon.style.transform = 'rotate(0deg)';
-                } else {
-                    c.style.maxHeight = c.scrollHeight + 'px';
-                    icon.style.transform = 'rotate(180deg)';
-                }
-            };
-        };
-        toggle('toggle-visual-settings', 'visual-settings-content');
-        toggle('toggle-price-manager', 'price-manager-content');
-
-        document.getElementById('logout-btn').onclick = () => signOut(auth).then(()=>window.location.href=window.location.pathname);
-        document.getElementById('prev-week').onclick = () => { currentMonday.setDate(currentMonday.getDate()-7); renderKanban(); };
-        document.getElementById('next-week').onclick = () => { currentMonday.setDate(currentMonday.getDate()+7); renderKanban(); };
-        document.getElementById('view-toggle').onchange = (e) => showApp(e.target.checked);
-
-        // Modais Logic
-        let activeSlot = null;
-        function openBookingModal(id, time, price, date, dayName) {
-            activeSlot = { id, price };
-            document.getElementById('modal-details').innerHTML = `${dayName}<br>${time} - R$ ${price}`;
-            toggleModal('booking-modal', true);
-        }
-        function openCancelModal(id) {
-            activeSlot = { id };
-            toggleModal('cancel-modal', true);
-        }
-        function toggleModal(id, show) {
-            const el = document.getElementById(id);
-            const content = el.querySelector('div');
-            if(show) { el.classList.remove('hidden'); setTimeout(()=>content.classList.remove('scale-95','opacity-0'),10); } 
-            else { content.classList.add('scale-95','opacity-0'); setTimeout(()=>el.classList.add('hidden'),200); }
-        }
-        
-        document.getElementById('confirm-button').onclick = async () => {
-            const name = document.getElementById('name').value;
-            const phone = document.getElementById('phone').value;
-            if(!name || !phone) return alert("Preencha tudo");
-            try {
-                await setDoc(doc(db, 'arenas', currentArenaId, 'agendamentos', activeSlot.id), {
-                    clientName: name, clientPhone: phone, price: activeSlot.price, status: 'booked'
-                });
-                toggleModal('booking-modal', false);
-                toggleModal('pix-modal', true);
-            } catch(e) { console.error(e); }
-        };
-        
-        document.getElementById('cancel-yes').onclick = async () => {
-             try { await deleteDoc(doc(db, 'arenas', currentArenaId, 'agendamentos', activeSlot.id)); toggleModal('cancel-modal', false); } catch(e){}
-        };
-        
-        document.querySelectorAll('[id$="-modal"]').forEach(m => m.onclick = (e) => { if(e.target===m) toggleModal(m.id, false); });
-        document.getElementById('cancel-button').onclick = () => toggleModal('booking-modal', false);
-        document.getElementById('cancel-no').onclick = () => toggleModal('cancel-modal', false);
-        document.getElementById('close-pix-btn').onclick = () => toggleModal('pix-modal', false);
-        
-        // Utils
-        function updateUIIdentity(data) {
-            if(!data) return;
+        // Helpers
+        function getMonday(d) { d = new Date(d); var day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6 : 1); return new Date(d.setDate(diff)); }
+        function applyVisual(data) {
             document.getElementById('header-school-name').textContent = data.name || "Agendamento";
-            if(data.address) { const a = document.getElementById('header-school-address'); a.querySelector('span').textContent = data.address; a.classList.remove('hidden'); }
-            if(data.logo) { document.getElementById('header-logo-container').innerHTML = `<img src="${data.logo}" class="w-full h-full object-cover">`; }
-            document.getElementById('pix-key-display').textContent = data.pixKey || "No balcão";
-        }
-        function populateSettings(data) {
-            document.getElementById('visual-name-input').value = data.name || '';
-            document.getElementById('visual-address-input').value = data.address || '';
-            document.getElementById('visual-pix-input').value = data.pixKey || '';
-            if(data.logo) {
-                currentLogoBase64 = data.logo;
-                document.getElementById('logo-preview').innerHTML = `<img src="${data.logo}" class="w-full h-full object-cover">`;
+            if(data.address) document.getElementById('header-school-address').querySelector('span').textContent = data.address;
+            if(data.logoUrl) {
+                document.getElementById('header-logo-container').innerHTML = `<img src="${data.logoUrl}" class="w-full h-full object-cover">`;
+                document.getElementById('logo-preview').innerHTML = `<img src="${data.logoUrl}" class="w-full h-full object-cover">`;
             }
         }
-        function getMonday(d) { d = new Date(d); var day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6 : 1); return new Date(d.setDate(diff)); }
-        function setupShareLink() {
-            const url = window.location.href;
-            document.getElementById('share-link-input').value = url;
-            document.getElementById('copy-share-link').onclick = () => { navigator.clipboard.writeText(url); showToast("Copiado!"); };
-            document.getElementById('share-whatsapp-btn').onclick = () => window.open(`https://wa.me/?text=${encodeURIComponent('Agende aqui: ' + url)}`);
+        function setupSharePanel() {
+            const link = window.location.href;
+            document.getElementById('share-link-input').value = link;
+            document.getElementById('copy-share-link').onclick = () => { navigator.clipboard.writeText(link); alert("Copiado!"); };
         }
-        function showToast(msg, ok=true) {
-            const t = document.getElementById('toast-notification');
-            document.getElementById('toast-message').textContent = msg;
-            t.classList.remove('translate-x-[calc(100%+20px)]', 'opacity-0');
-            setTimeout(() => t.classList.add('translate-x-[calc(100%+20px)]', 'opacity-0'), 3000);
+        function initPriceManager() {
+            const c = document.getElementById('day-selector');
+            dayNames.forEach(d => {
+                const b = document.createElement('button'); b.textContent = d;
+                b.className = 'px-3 py-1 bg-gray-800 rounded text-gray-400 hover:bg-gray-700';
+                b.onclick = () => b.classList.toggle('bg-custom-cyan') || b.classList.toggle('text-black');
+                c.appendChild(b);
+            });
+            document.getElementById('apply-price-btn').onclick = async () => {
+                const days = Array.from(c.querySelectorAll('.bg-custom-cyan')).map(b=>b.textContent);
+                const s = document.getElementById('start-time-input').value, e = document.getElementById('end-time-input').value, p = document.getElementById('price-input').value;
+                if(!days.length || !s || !e || !p) return alert("Preencha tudo");
+                const rules = JSON.parse(JSON.stringify(priceRules));
+                days.forEach(d => { if(!rules[d]) rules[d]={}; rules[d][`${s} - ${e}`] = p; });
+                await setDoc(doc(getScopedCollectionRef('configurations'), 'priceRules'), rules);
+                alert("Preços salvos!");
+            }
+            // Toggle Logic
+            const toggle = (btn, content) => {
+                document.getElementById(btn).onclick = () => {
+                   const el = document.getElementById(content);
+                   el.style.maxHeight = el.style.maxHeight === '0px' || !el.style.maxHeight ? el.scrollHeight + 'px' : '0px';
+                }
+            };
+            toggle('toggle-visual-settings', 'visual-settings-content');
+            toggle('toggle-price-manager', 'price-manager-content');
+            document.getElementById('integrate-payment-btn').onclick = () => openModal('payment-modal');
+            document.getElementById('save-payment-button').onclick = async () => {
+                 await setDoc(doc(getScopedCollectionRef('configurations'), 'payment'), { pixKey: document.getElementById('pix-key-input').value });
+                 closeModal('payment-modal');
+            };
+        }
+
+        // Modal Helpers
+        let activeData = null;
+        function openBookingModal(id, time, price, date, day) {
+            activeData = { id, price };
+            document.getElementById('modal-details').innerHTML = `${day}, ${date}<br>${time} - R$ ${price}`;
+            openModal('booking-modal');
+        }
+        function openCancelModal(id) { activeData = {id}; openModal('cancel-confirm-modal'); }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); setTimeout(()=>document.querySelector(`#${id} > div`).classList.remove('scale-95','opacity-0'),10); }
+        function closeModal(id) { document.querySelector(`#${id} > div`).classList.add('scale-95','opacity-0'); setTimeout(()=>document.getElementById(id).classList.add('hidden'),200); }
+        function setupModals() {
+            document.getElementById('cancel-button').onclick = () => closeModal('booking-modal');
+            document.getElementById('confirm-button').onclick = async () => {
+                 const n = document.getElementById('name').value, p = document.getElementById('phone').value;
+                 if(!n || !p) return alert("Preencha nome e telefone");
+                 try {
+                     await setDoc(doc(getScopedCollectionRef('schedules'), activeData.id), {
+                         clientName: n, clientPhone: p, price: activeData.price, status: 'pending', expiresAt: new Date(Date.now() + 7200000).toISOString()
+                     });
+                     closeModal('booking-modal');
+                     document.getElementById('pix-key-display').textContent = paymentConfig.pixKey || "No balcão";
+                     openModal('pix-payment-info-modal');
+                 } catch(e) { console.error(e); alert("Erro ao agendar"); }
+            };
+            document.getElementById('close-pix-info-button').onclick = () => closeModal('pix-payment-info-modal');
+            document.getElementById('cancel-decline-button').onclick = () => closeModal('cancel-confirm-modal');
+            document.getElementById('cancel-payment-button').onclick = () => closeModal('payment-modal');
+            document.getElementById('cancel-confirm-button').onclick = async () => {
+                await deleteDoc(doc(getScopedCollectionRef('schedules'), activeData.id));
+                closeModal('cancel-confirm-modal');
+                alert("Cancelado");
+            };
         }
     </script>
 </body>
 </html>
+```
+
+### Passo 2: Restaurar as Regras do Firebase (Urgente!)
+
+Como tentamos mudar para o sistema "Arenas", as regras atuais provavelmente estão bloqueando o sistema "Escolas".
+
+Vá no Firebase Console -> Firestore -> Regras e coloque este código que permite o funcionamento integrado novamente:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Regras do Gestor FC (Padrão)
+    function isMemberOfSchool(escolaId) {
+        return request.auth != null && 
+               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.escolaId == escolaId;
+    }
+
+    match /registrationCodes/{codeId} { allow read: true; allow update: if request.auth != null; }
+    match /users/{userId} { allow read, write: if request.auth.uid == userId; }
+
+    // === REGRAS DA NOSSA VERSÃO INTEGRADA ===
+    match /escolas/{escolaId} {
+      
+      // Documento da escola: Protegido
+      allow read, write: if isMemberOfSchool(escolaId);
+
+      // A. Configurações (Logo, Preços): PÚBLICO para ler
+      match /configurations/{document=**} {
+          allow read: if true;
+          allow write: if request.auth != null; // Permite edição se logado
+      }
+
+      // B. Agenda: PÚBLICO para ler
+      match /schedules/{scheduleId} {
+          allow read: if true;
+          allow create: if true; // Qualquer um reserva (login anônimo)
+          allow update, delete: if request.auth != null; // Gestor ou Dono
+      }
+      
+      // Outras coleções protegidas
+      match /{document=**} {
+          allow read, write: if isMemberOfSchool(escolaId);
+      }
+    }
+  }
+}
