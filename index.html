@@ -316,6 +316,25 @@
     </div>
 
     <!-- Modais -->
+
+    <!-- MODAL DE CONFIGURAÇÃO DE PIX -->
+    <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        <div class="bg-dark-card rounded-xl shadow-2xl p-8 w-full max-w-md m-4 transform transition-all duration-300 scale-95 opacity-0">
+            <h3 class="text-2xl font-bold text-white mb-2">Configurar Pagamento PIX</h3>
+            <p class="text-gray-400 mb-6">A chave PIX que você salvar aqui será mostrada aos clientes quando eles fizerem uma pré-reserva.</p>
+            
+            <div>
+                <label for="pix-key-input" class="block text-sm font-medium text-gray-300">Sua Chave PIX</label>
+                <input type="text" id="pix-key-input" placeholder="CPF, Email, Telefone ou Aleatória" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-custom-cyan focus:border-custom-cyan">
+            </div>
+
+            <div class="mt-8 flex justify-end gap-4">
+                <button id="cancel-payment-button" class="py-2 px-5 bg-dark-card-hover rounded-lg font-semibold hover:bg-gray-600 text-gray-200">Cancelar</button>
+                <button id="save-payment-button" class="py-2 px-5 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80">Salvar Chave</button>
+            </div>
+        </div>
+    </div>
+
     <div id="booking-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
         <div class="bg-dark-card rounded-xl shadow-2xl p-8 w-full max-w-md m-4 transform transition-all duration-300 scale-95 opacity-0">
             <h3 class="text-2xl font-bold text-white mb-2">Confirmar Agendamento</h3>
@@ -328,14 +347,27 @@
         </div>
     </div>
 
+    <!-- MODAL DE INFORMAÇÃO PIX APÓS AGENDAMENTO -->
     <div id="pix-payment-info-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
         <div class="bg-dark-card rounded-xl shadow-2xl p-8 w-full max-w-md m-4 text-center transform transition-all duration-300 scale-95 opacity-0">
             <i data-lucide="check-circle" class="h-12 w-12 text-green-400 mx-auto mb-4"></i>
             <h3 class="text-2xl font-bold text-white mb-2">Pré-reserva efetuada!</h3>
-            <p class="text-gray-400 mb-6">Para confirmar, realize o pagamento via PIX em até 2 horas. Após o pagamento, clique em "Já paguei".</p>
-            <div class="bg-dark-bg/50 p-4 rounded-lg space-y-2"><p class="text-sm text-gray-300">Chave PIX (Copia e Cola):</p><p id="pix-key-display" class="font-mono text-lg text-custom-cyan break-words"></p></div>
-            <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center"><button id="copy-pix-key-button" class="flex-1 flex items-center justify-center gap-2 py-2 px-5 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80"><i data-lucide="copy" class="h-5 w-5"></i>Copiar Chave</button></div>
-             <button id="close-pix-info-button" class="mt-4 w-full text-center py-2 text-gray-400 hover:text-white">Entendido</button>
+            <p class="text-gray-400 mb-6">Para confirmar, realize o pagamento via PIX em até 2 horas. Após o pagamento, clique em "Já paguei" no seu horário.</p>
+            
+            <div class="bg-dark-bg/50 p-4 rounded-lg space-y-2 mb-6">
+                <p class="text-sm text-gray-300">Chave PIX (Copia e Cola):</p>
+                <p id="pix-key-display" class="font-mono text-lg text-custom-cyan break-words select-all font-bold"></p>
+            </div>
+            
+            <div class="flex flex-col gap-3">
+                <button id="copy-pix-key-button" class="w-full flex items-center justify-center gap-2 py-3 px-5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-bold transition-colors">
+                    <i data-lucide="copy" class="h-5 w-5"></i>
+                    Copiar Chave
+                </button>
+                <button id="close-pix-info-button" class="w-full py-3 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80">
+                    Entendido, vou pagar
+                </button>
+            </div>
         </div>
     </div>
 
@@ -398,8 +430,7 @@
     </div>
 
     <div id="toast-notification" class="fixed bottom-5 right-5 bg-dark-card border-l-4 border-custom-cyan text-white p-4 rounded-lg shadow-lg flex items-center gap-4 max-w-sm transition-all duration-500 transform translate-x-[calc(100%+20px)] opacity-0 z-[101]">
-        <div id="toast-icon"></div><p id="toast-message" class="text-sm"></p>
-    </div>
+        <div id="toast-icon"></div><p id="toast-message" class="text-sm"></p></div>
 
     <!-- Firebase SDKs -->
     <script type="module">
@@ -421,15 +452,27 @@
         const auth = getAuth(app);
 
 
-        // --- LÓGICA MULTI-TENANT ---
+        // --- LÓGICA MULTI-TENANT COM DEV MODE ---
 
         function getQueryParam(param) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(param);
         }
 
-        const escolaId = getQueryParam('escolaId');
-        const userRole = getQueryParam('role'); // Apenas um sinalizador, não dá permissão real
+        let escolaId = getQueryParam('escolaId');
+        let userRole = getQueryParam('role'); 
+
+        // DETECÇÃO AUTOMÁTICA DE LOCALHOST (FIVE SERVER)
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        
+        if (isLocalhost && !escolaId) {
+            console.log("%c MODO DESENVOLVIMENTO ATIVADO 🛠️", "background: #5ce1e6; color: black; font-size: 14px; padding: 4px; border-radius: 4px;");
+            // Substitua 'escola_ousacs' pelo ID real que você quer testar
+            escolaId = 'escola_ousacs'; 
+            userRole = 'admin'; 
+            // Atualiza a URL visualmente apenas para não ficar confuso, sem recarregar
+            window.history.replaceState({}, '', `?escolaId=${escolaId}&role=admin`);
+        }
 
         // Função global para referências
         function getScopedCollectionRef(collectionName) {
@@ -447,13 +490,12 @@
         }
 
         // --- ESTADO GLOBAL ---
-        let adminEmailRequired = null; // Vai armazenar o e-mail oficial do admin dessa escola
+        let adminEmailRequired = null; 
         let isManagerView = false;
         let currentUser = null;
         let firebaseReady = false;
         let schedules = {}, monthlySchedules = {}, priceRules = {}, paymentConfig = {};
         let syncWithFinance = localStorage.getItem('syncWithFinance') !== 'false';
-        // Variável nova para armazenar a Logo convertida
         let currentLogoBase64 = null;
         
         // Variáveis de UI
@@ -480,6 +522,7 @@
             const cancelConfirmModal = document.getElementById('cancel-confirm-modal'), cancelConfirmModalContent = cancelConfirmModal.querySelector('div');
             const managerModal = document.getElementById('manager-modal'), managerModalContent = managerModal.querySelector('.bg-dark-card');
             const paymentModal = document.getElementById('payment-modal'), paymentModalContent = paymentModal.querySelector('div');
+            const pixKeyInput = document.getElementById('pix-key-input');
             const addSlotModal = document.getElementById('add-slot-modal'), addSlotModalContent = addSlotModal.querySelector('div');
             const toastNotification = document.getElementById('toast-notification'), toastMessage = document.getElementById('toast-message'), toastIcon = document.getElementById('toast-icon');
             const syncToggle = document.getElementById('sync-toggle');
@@ -547,7 +590,6 @@
                     return;
                 }
 
-                // Opcional: Validar se o e-mail digitado é o esperado antes de bater no Firebase
                 if (adminEmailRequired && email !== adminEmailRequired) {
                      loginError.textContent = "Este e-mail não tem permissão para gerenciar esta quadra.";
                      loginError.classList.remove('hidden');
@@ -768,7 +810,7 @@
                     paymentConfig = docSnap.exists() ? docSnap.data() : { pixKey: '' };
                 });
                 onSnapshot(doc(getScopedCollectionRef('configurations'), 'priceRules'), docSnap => {
-                    priceRules = docSnap.exists() ? docSnap.data() : { default: { '18:00-19:00':'150,00', '19:00-20:00':'150,00', '20:00-21:00':'180,00', '21:00-22:00':'180,00', '22:00-23:00':'120,00' }};
+                    priceRules = docSnap.exists() ? docSnap.data() : { default: { '18:00 - 19:00':'150,00', '19:00 - 20:00':'150,00', '20:00 - 21:00':'180,00', '21:00 - 22:00':'180,00', '22:00 - 23:00':'120,00' }};
                     renderBasedOnCurrentView();
                 });
             }
@@ -776,7 +818,15 @@
             // --- FUNÇÕES AUXILIARES E UI ---
             
             function setupSharePanel() {
-                const cleanLink = `${window.location.origin}${window.location.pathname}?escolaId=${escolaId}`;
+                // Monta o link correto mesmo estando em localhost ou vercel
+                let cleanLink = `${window.location.origin}${window.location.pathname}`;
+                // Se estiver em localhost, garante que os parâmetros de teste sejam incluídos no link de compartilhar
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                     cleanLink += `?escolaId=escola_ousacs`;
+                } else {
+                     cleanLink += `?escolaId=${escolaId}`;
+                }
+                
                 shareLinkInput.value = cleanLink;
                 copyShareLinkBtn.onclick = () => navigator.clipboard.writeText(cleanLink).then(() => showToast("Link copiado!"));
                 shareWhatsappBtn.onclick = () => {
@@ -808,7 +858,26 @@
             function formatFullDate(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${day}`}
             function getPrice(fullDate,dayName,time){const monthly=Object.values(monthlySchedules).find(m=>m.dayName===dayName&&m.time===time);if(monthly)return monthly.price;if(priceRules[fullDate]&&priceRules[fullDate][time])return priceRules[fullDate][time];if(priceRules[dayName]&&priceRules[dayName][time])return priceRules[dayName][time];return(priceRules.default&&priceRules.default[time])||'0,00'}
             function findMonthlyBooking(slotId){const[date,time]=slotId.split('_'),dayDate=new Date(date+'T12:00:00Z'),dayName=dayNames[dayDate.getUTCDay()],key=Object.keys(monthlySchedules).find(k=>{const s=monthlySchedules[k];return s.dayName===dayName&&s.time===time});return key?{...monthlySchedules[key],slotId,status:'booked'}:null}
-            function checkExpiredReservations(){const now=Date.now();for(const id in schedules){const b=schedules[id];if(b.status==='pending'&&b.expiresAt&&now>b.expiresAt.toMillis()){deleteDoc(doc(getScopedCollectionRef('schedules'),id))}}}
+            
+            // FUNÇÃO CORRIGIDA PARA TRATAR DATA DE EXPIRAÇÃO
+            function checkExpiredReservations(){
+                const now = Date.now();
+                for(const id in schedules){
+                    const b = schedules[id];
+                    if(b.status === 'pending' && b.expiresAt){
+                        let expTime = 0;
+                        if(typeof b.expiresAt.toMillis === 'function') {
+                            expTime = b.expiresAt.toMillis();
+                        } else if (typeof b.expiresAt === 'string') {
+                            expTime = new Date(b.expiresAt).getTime();
+                        }
+                        if(expTime > 0 && now > expTime){
+                            deleteDoc(doc(getScopedCollectionRef('schedules'), id)).catch(e => console.error("Erro ao deletar expirado:", e));
+                        }
+                    }
+                }
+            }
+
             function showToast(msg,isSuccess=true){toastMessage.textContent=msg;if(isSuccess){toastIcon.innerHTML=`<i data-lucide="check-circle" class="h-6 w-6 text-custom-cyan"></i>`;toastNotification.classList.remove('border-red-500');toastNotification.classList.add('border-custom-cyan')}else{toastIcon.innerHTML=`<i data-lucide="alert-triangle" class="h-6 w-6 text-red-500"></i>`;toastNotification.classList.remove('border-custom-cyan');toastNotification.classList.add('border-red-500')}lucide.createIcons();toastNotification.classList.remove('translate-x-[calc(100%+20px)]','opacity-0');setTimeout(()=>toastNotification.classList.add('translate-x-[calc(100%+20px)]','opacity-0'),5000)}
 
             function renderBasedOnCurrentView(){const term=searchInput.value;if(term)renderFilteredDays(term);else renderWeek();if(isManagerView)updateNextEventDashboard()}
@@ -832,6 +901,67 @@
             priceManagerHeader.addEventListener('click', () => togglePanel(priceManagerContent, togglePriceManagerBtn.querySelector('i')));
             
             function initPriceManager(){const daySel=document.getElementById('day-selector'),apply=document.getElementById('apply-price-btn');daySel.innerHTML='';dayNames.forEach(name=>{const b=document.createElement('button');b.dataset.dayName=name;b.className='px-3 py-1.5 bg-gray-700 text-sm rounded-md hover:bg-gray-600';b.textContent=name;b.onclick=()=>b.classList.toggle('bg-custom-cyan')&b.classList.toggle('text-black')&b.classList.toggle('bg-gray-700');daySel.appendChild(b)});apply.onclick=async()=>{const price=document.getElementById('price-input').value.trim(),days=daySel.querySelectorAll('.bg-custom-cyan'),start=document.getElementById('start-time-input').value,end=document.getElementById('end-time-input').value;if(!price||days.length===0||!start||!end){showToast("Preencha todos os campos.",false);return}if(start>=end){showToast("Início deve ser antes do fim.",false);return}const rules=JSON.parse(JSON.stringify(priceRules));days.forEach(b=>{const day=b.dataset.dayName;if(!rules[day])rules[day]={};const all=Array.from(new Set([...defaultTimeSlots,...Object.keys(priceRules.default||{})]));all.forEach(s=>{const[sStart]=s.split(' - ');if(sStart>=start&&sStart<end){rules[day][s]=price}})});try{await setDoc(doc(getScopedCollectionRef('configurations'),"priceRules"),rules,{merge:true});showToast("Preços atualizados!")}catch(e){showToast("Erro ao guardar preços.",false)}}}
+
+
+            // --- LÓGICA DO MODAL DE PAGAMENTO (PIX) ---
+
+            // 1. Botão "Integrar Meios de Pagamento" (Abre o Modal)
+            document.getElementById('integrate-payment-btn').addEventListener('click', () => {
+                // Preenche o input se já existir uma chave carregada
+                if (paymentConfig && paymentConfig.pixKey) {
+                    pixKeyInput.value = paymentConfig.pixKey;
+                }
+                
+                paymentModal.classList.remove('hidden');
+                // Pequeno delay para a animação funcionar
+                setTimeout(() => {
+                    paymentModalContent.classList.remove('scale-95', 'opacity-0');
+                }, 10);
+            });
+
+            // 2. Botão Cancelar e Fechar Fundo
+            function closePaymentModal() {
+                paymentModalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    paymentModal.classList.add('hidden');
+                }, 200);
+            }
+
+            document.getElementById('cancel-payment-button').addEventListener('click', closePaymentModal);
+            
+            // Fecha se clicar fora do modal
+            paymentModal.addEventListener('click', (e) => {
+                if (e.target === paymentModal) closePaymentModal();
+            });
+
+            // 3. Botão Salvar (Grava no Firebase)
+            document.getElementById('save-payment-button').addEventListener('click', async () => {
+                const newPixKey = pixKeyInput.value.trim();
+                const btn = document.getElementById('save-payment-button');
+                
+                // Feedback visual
+                const originalText = btn.textContent;
+                btn.textContent = "Salvando...";
+                btn.disabled = true;
+
+                try {
+                    // Salva na coleção 'configurations' documento 'payment'
+                    await setDoc(doc(getScopedCollectionRef('configurations'), 'payment'), {
+                        pixKey: newPixKey
+                    }, { merge: true });
+
+                    showToast("Chave PIX salva com sucesso!");
+                    closePaymentModal();
+                } catch (error) {
+                    console.error("Erro ao salvar PIX:", error);
+                    showToast("Erro ao salvar. Tente novamente.", false);
+                } finally {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }
+            });
+
+
             function addPlayerInput(){const c=playerListContainer,div=document.createElement('div');div.className='flex items-center gap-2';const input=document.createElement('input');input.type='text';input.className='flex-grow bg-gray-900 border border-gray-700 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-custom-cyan';const btn=document.createElement('button');btn.className='p-1 text-gray-500 hover:text-red-400';btn.innerHTML='<i data-lucide="x-circle" class="h-5 w-5"></i>';btn.onclick=()=>(div.remove(),updatePlayerPlaceholders());div.appendChild(input);div.appendChild(btn);c.appendChild(div);updatePlayerPlaceholders();lucide.createIcons()}
             function updatePlayerPlaceholders(){document.querySelectorAll('#player-list-container input').forEach((i,idx)=>i.placeholder=`Jogador ${idx+1}`)}
             document.getElementById('add-player-btn').addEventListener('click', addPlayerInput);
@@ -842,6 +972,7 @@
             function openModal(data){currentBookingData=data;modalDetails.innerHTML=`<span class="font-bold">${data.day}, ${data.date}</span><br>Horário: ${data.time}<br>Valor: <span class="font-bold text-custom-cyan">R$ ${data.price}</span>`;bookingModal.classList.remove('hidden');setTimeout(()=>bookingModalContent.classList.remove('scale-95','opacity-0'),10)}
             function openManagerModal(data){const{slotId,day,date,time,price}=data,booking=schedules[slotId]||findMonthlyBooking(slotId),title=document.getElementById('manager-modal-title'),view=document.getElementById('manager-view-container'),form=document.getElementById('manager-form-container'),actions=document.getElementById('manager-actions');actions.innerHTML='';if(booking){title.textContent='Detalhes do Agendamento';view.classList.remove('hidden');form.classList.add('hidden');const details=document.getElementById('manager-modal-details'),phone=(booking.clientPhone||'').replace(/\D/g,''),wa=phone?`https://wa.me/55${phone}`:'#';details.innerHTML=`<p><strong>Horário:</strong> ${day}, ${date} às ${time}</p><p><strong>Cliente:</strong> ${booking.clientName||'N/A'}</p><div class="flex items-center"><p class="flex-grow"><strong>Telefone:</strong> ${booking.clientPhone||'N/A'}</p>${phone?`<a href="${wa}" target="_blank" class="ml-4 h-8 w-8 rounded-full bg-green-500 hover:bg-green-600 inline-flex items-center justify-center"><i data-lucide="message-square" class="h-4 w-4"></i></a>`:''}</div><p><strong>Tipo:</strong> <span class="capitalize">${booking.type||'avulso'}</span></p><p><strong>Status:</strong> <span class="capitalize">${booking.status}</span></p><p><strong>Valor:</strong> R$ ${price}</p>`;if(['pending','payment_review'].includes(booking.status)){actions.innerHTML+=`<button onclick="confirmPayment('${slotId}','${price}')" class="py-2 px-5 bg-green-600 rounded-lg font-bold">Confirmar Pagamento</button>`}actions.innerHTML+=`<button onclick="cancelBooking('${slotId}')" class="py-2 px-5 bg-red-600 rounded-lg font-bold">Cancelar Agendamento</button>`}else{title.textContent='Agendar Horário';view.classList.add('hidden');form.classList.remove('hidden');document.getElementById('manager-form-details').innerHTML=`Agendando para <span class="font-bold">${day}, ${date}</span> às <span class="font-bold">${time}</span>.`;document.getElementById('manager-name').value='';document.getElementById('manager-phone').value='';document.getElementById('manager-booking-type-single').checked=true;actions.innerHTML+=`<button onclick="createBookingByManager('${slotId}','${price}')" class="py-2 px-5 bg-custom-cyan text-black rounded-lg font-bold">Guardar Agendamento</button>`}actions.innerHTML+=`<button onclick="closeManagerModal()" class="py-2 px-5 bg-dark-card-hover rounded-lg font-semibold">Fechar</button>`;managerModal.classList.remove('hidden');setTimeout(()=>{managerModalContent.classList.remove('scale-95','opacity-0');lucide.createIcons()},10)}
             function openCancelConfirmModal(id){currentCancellationSlotId=id;cancelConfirmModal.classList.remove('hidden');setTimeout(()=>cancelConfirmModalContent.classList.remove('scale-95','opacity-0'),10)}
+            
             function openAddSlotModal(date){currentSlotAddData={date};const dayDate=new Date(date+'T12:00:00Z');document.getElementById('add-slot-modal-details').textContent=`Adicionar para ${dayNames[dayDate.getUTCDay()]}, ${formatDate(dayDate)}`;addSlotModal.classList.remove('hidden');setTimeout(()=>addSlotModalContent.classList.remove('scale-95','opacity-0'),10)}
             function openPixInfoModal(){if(paymentConfig.pixKey){pixKeyDisplay.textContent=paymentConfig.pixKey;pixPaymentInfoModal.classList.remove('hidden');setTimeout(()=>pixPaymentInfoModalContent.classList.remove('scale-95','opacity-0'),10)}}
             
