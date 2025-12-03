@@ -808,7 +808,30 @@
             function formatFullDate(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${day}`}
             function getPrice(fullDate,dayName,time){const monthly=Object.values(monthlySchedules).find(m=>m.dayName===dayName&&m.time===time);if(monthly)return monthly.price;if(priceRules[fullDate]&&priceRules[fullDate][time])return priceRules[fullDate][time];if(priceRules[dayName]&&priceRules[dayName][time])return priceRules[dayName][time];return(priceRules.default&&priceRules.default[time])||'0,00'}
             function findMonthlyBooking(slotId){const[date,time]=slotId.split('_'),dayDate=new Date(date+'T12:00:00Z'),dayName=dayNames[dayDate.getUTCDay()],key=Object.keys(monthlySchedules).find(k=>{const s=monthlySchedules[k];return s.dayName===dayName&&s.time===time});return key?{...monthlySchedules[key],slotId,status:'booked'}:null}
-            function checkExpiredReservations(){const now=Date.now();for(const id in schedules){const b=schedules[id];if(b.status==='pending'&&b.expiresAt&&now>b.expiresAt.toMillis()){deleteDoc(doc(getScopedCollectionRef('schedules'),id))}}}
+            
+            // FUNÇÃO CORRIGIDA PARA TRATAR DATA DE EXPIRAÇÃO
+            function checkExpiredReservations(){
+                const now = Date.now();
+                for(const id in schedules){
+                    const b = schedules[id];
+                    if(b.status === 'pending' && b.expiresAt){
+                        let expTime = 0;
+                        // Verifica se é Timestamp do Firestore (tem função toMillis)
+                        if(typeof b.expiresAt.toMillis === 'function') {
+                            expTime = b.expiresAt.toMillis();
+                        } 
+                        // Verifica se é String ISO (do nosso salvamento local)
+                        else if (typeof b.expiresAt === 'string') {
+                            expTime = new Date(b.expiresAt).getTime();
+                        }
+                        
+                        if(expTime > 0 && now > expTime){
+                            deleteDoc(doc(getScopedCollectionRef('schedules'), id)).catch(e => console.error("Erro ao deletar expirado:", e));
+                        }
+                    }
+                }
+            }
+
             function showToast(msg,isSuccess=true){toastMessage.textContent=msg;if(isSuccess){toastIcon.innerHTML=`<i data-lucide="check-circle" class="h-6 w-6 text-custom-cyan"></i>`;toastNotification.classList.remove('border-red-500');toastNotification.classList.add('border-custom-cyan')}else{toastIcon.innerHTML=`<i data-lucide="alert-triangle" class="h-6 w-6 text-red-500"></i>`;toastNotification.classList.remove('border-custom-cyan');toastNotification.classList.add('border-red-500')}lucide.createIcons();toastNotification.classList.remove('translate-x-[calc(100%+20px)]','opacity-0');setTimeout(()=>toastNotification.classList.add('translate-x-[calc(100%+20px)]','opacity-0'),5000)}
 
             function renderBasedOnCurrentView(){const term=searchInput.value;if(term)renderFilteredDays(term);else renderWeek();if(isManagerView)updateNextEventDashboard()}
