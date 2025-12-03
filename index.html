@@ -3,30 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agendamento de Society</title>
+    <title>Agendamento Society</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
-    
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* Estilos para scrollbars e outros detalhes visuais */
         .kanban-container::-webkit-scrollbar, .player-list-container::-webkit-scrollbar { height: 8px; width: 8px; }
         .kanban-container::-webkit-scrollbar-track, .player-list-container::-webkit-scrollbar-track { background: #1f2937; border-radius: 10px; }
         .kanban-container::-webkit-scrollbar-thumb, .player-list-container::-webkit-scrollbar-thumb { background: #5ce1e6; border-radius: 10px; }
         .kanban-container::-webkit-scrollbar-thumb:hover, .player-list-container::-webkit-scrollbar-thumb:hover { background: #4ab8bd; }
         .capitalize { text-transform: capitalize; }
         input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
-        .fading-out { opacity: 0; }
         #price-manager-content, #team-sorter-content, #visual-settings-content {
             max-height: 0;
             overflow: hidden;
@@ -34,17 +24,12 @@
         }
     </style>
 
-
     <script>
-        // Configuração do Tailwind CSS
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: { 'sans': ['Inter', 'sans-serif'], },
-                    colors: {
-                        'custom-cyan': '#5ce1e6', 'dark-bg': '#111827',
-                        'dark-card': '#1f2937', 'dark-card-hover': '#374151',
-                    }
+                    colors: { 'custom-cyan': '#5ce1e6', 'dark-bg': '#111827', 'dark-card': '#1f2937', 'dark-card-hover': '#374151', }
                 }
             }
         }
@@ -52,71 +37,72 @@
 </head>
 <body class="bg-dark-bg text-gray-200 font-sans antialiased">
 
-    <!-- Ecrã de Erro (Sem Escola) -->
-    <div id="error-screen" class="fixed inset-0 bg-dark-bg z-[200] flex items-center justify-center p-4 hidden">
-        <div class="text-center max-w-md">
-            <i data-lucide="link-2-off" class="h-16 w-16 text-red-500 mx-auto mb-6"></i>
-            <h2 class="text-3xl font-bold text-white mb-2">Link Incompleto</h2>
-            <p class="text-gray-400">Não identificamos a escola neste link.</p>
-            <p class="text-sm text-gray-500 mt-4">Certifique-se de usar o link fornecido pelo Gestor FC.</p>
-        </div>
-    </div>
-
-    <!-- TELA DE LOGIN (BLINDADA) -->
-    <div id="login-screen" class="fixed inset-0 bg-dark-bg z-[150] flex items-center justify-center p-4 hidden">
-        <div class="w-full max-w-sm bg-dark-card p-8 rounded-xl border border-gray-700 shadow-2xl">
+    <!-- TELA DE LOGIN (INITIAL) -->
+    <div id="login-screen" class="fixed inset-0 bg-dark-bg z-[150] flex items-center justify-center p-4">
+        <div class="w-full max-w-sm bg-dark-card p-8 rounded-xl border border-gray-700 shadow-2xl relative">
+            <div id="loading-overlay" class="absolute inset-0 bg-dark-card/90 z-10 flex items-center justify-center hidden rounded-xl">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-custom-cyan"></div>
+            </div>
+            
             <div class="text-center mb-8">
                 <div class="mx-auto h-12 w-12 bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                    <i data-lucide="lock" class="h-6 w-6 text-custom-cyan"></i>
+                    <i data-lucide="layout-grid" class="h-6 w-6 text-custom-cyan"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-white">Área do Gestor</h2>
-                <p class="text-gray-400 text-sm mt-2">Faça login para gerenciar a <span id="login-school-name" class="text-white font-semibold">quadra</span>.</p>
+                <h2 class="text-2xl font-bold text-white">Gestão de Quadras</h2>
+                <p class="text-gray-400 text-sm mt-2">Entre para gerenciar seu espaço.</p>
             </div>
             
             <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">E-mail</label>
-                    <input type="email" id="login-email" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2.5 px-4 text-white focus:ring-custom-cyan focus:border-custom-cyan transition-colors">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">Senha</label>
-                    <input type="password" id="login-password" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2.5 px-4 text-white focus:ring-custom-cyan focus:border-custom-cyan transition-colors">
-                </div>
-                <button id="login-btn" class="w-full py-3 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-90 transition-all transform active:scale-95">
-                    Entrar
-                </button>
+                <input type="email" id="login-email" placeholder="Seu E-mail" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white focus:ring-custom-cyan focus:border-custom-cyan">
+                <input type="password" id="login-password" placeholder="Sua Senha" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-3 px-4 text-white focus:ring-custom-cyan focus:border-custom-cyan">
+                <button id="login-btn" class="w-full py-3 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-90 transition-transform active:scale-95">Acessar Painel</button>
             </div>
             <p id="login-error" class="text-red-500 text-sm mt-4 text-center hidden"></p>
         </div>
     </div>
 
-    <!-- Conteúdo Principal da Aplicação -->
-    <div id="app-container" class="hidden"> <!-- Container Wrapper para controle de visibilidade -->
-    <div id="app" class="min-h-screen flex-col flex">
-        
-        <!-- HEADER DINÂMICO -->
+    <!-- TELA DE SETUP (CRIAR QUADRA) -->
+    <div id="setup-screen" class="fixed inset-0 bg-dark-bg z-[160] flex items-center justify-center p-4 hidden">
+        <div class="w-full max-w-md bg-dark-card p-8 rounded-xl border border-gray-700 shadow-2xl">
+            <h2 class="text-2xl font-bold text-white mb-2">Bem-vindo(a)! 🎉</h2>
+            <p class="text-gray-400 mb-6">Não encontramos nenhuma quadra vinculada ao seu e-mail. Vamos criar a sua agora?</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Nome da Quadra</label>
+                    <input type="text" id="setup-name" placeholder="Ex: Arena Show de Bola" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 px-3 text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Endereço (Cidade/Bairro)</label>
+                    <input type="text" id="setup-address" placeholder="Ex: Centro, Poços de Caldas" class="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 px-3 text-white">
+                </div>
+                <button id="create-arena-btn" class="w-full py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700">Criar Minha Quadra</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP PRINCIPAL -->
+    <div id="app-container" class="hidden">
         <header class="bg-dark-card/90 backdrop-blur-sm sticky top-0 z-20 border-b border-gray-800 shadow-md">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-20"> 
                     <div class="flex items-center gap-3 overflow-hidden">
-                        <!-- Logo da Quadra (Dinâmica) -->
                         <div id="header-logo-container" class="h-12 w-12 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden border border-gray-600 flex-shrink-0">
                             <i data-lucide="calendar-check" class="h-6 w-6 text-custom-cyan"></i>
                         </div>
                         <div class="flex flex-col">
-                            <h1 id="header-school-name" class="text-lg sm:text-xl font-bold tracking-tight text-white truncate">Agendamento Society</h1>
-                            <p id="header-school-address" class="text-xs text-gray-400 truncate max-w-[200px] sm:max-w-md flex items-center gap-1 hidden">
-                                <i data-lucide="map-pin" class="h-3 w-3"></i> <span></span>
-                            </p>
+                            <h1 id="header-school-name" class="text-lg sm:text-xl font-bold tracking-tight text-white truncate">Carregando...</h1>
+                            <p id="header-school-address" class="text-xs text-gray-400 truncate max-w-[200px] sm:max-w-md flex items-center gap-1 hidden"><i data-lucide="map-pin" class="h-3 w-3"></i> <span></span></p>
                         </div>
                     </div>
-                    <!-- Logout Button (Só aparece para admin logado) -->
+                    
+                    <!-- Controles do Admin -->
                     <div id="admin-controls" class="hidden items-center gap-4">
                          <button id="logout-btn" class="text-gray-400 hover:text-red-400 text-sm flex items-center gap-1" title="Sair">
                             <i data-lucide="log-out" class="h-4 w-4"></i> <span class="hidden sm:inline">Sair</span>
                         </button>
                     </div>
                     
+                    <!-- Toggle View -->
                     <div id="view-toggle-container" class="hidden items-center space-x-3 flex-shrink-0 ml-2">
                         <span class="font-medium text-gray-300 text-sm sm:text-base">Cliente</span>
                         <label for="view-toggle" class="relative inline-flex items-center cursor-pointer">
@@ -130,146 +116,78 @@
         </header>
 
         <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            
-            <!-- NAVEGAÇÃO DE SEMANAS -->
+            <!-- NAVEGAÇÃO -->
             <div class="flex items-center justify-center mb-8">
-                <button id="prev-week" class="flex items-center gap-2 p-2 rounded-lg hover:bg-dark-card transition-colors">
-                    <i data-lucide="chevron-left" class="h-6 w-6"></i>
-                    <span class="hidden sm:inline font-semibold">Anterior</span>
-                </button>
-                <h2 id="week-display" class="text-xl sm:text-2xl font-semibold mx-4 sm:mx-8 w-64 text-center">Carregando...</h2>
-                <button id="next-week" class="flex items-center gap-2 p-2 rounded-lg hover:bg-dark-card transition-colors">
-                    <span class="hidden sm:inline font-semibold">Próxima</span>
-                    <i data-lucide="chevron-right" class="h-6 w-6"></i>
-                </button>
+                <button id="prev-week" class="flex items-center gap-2 p-2 rounded-lg hover:bg-dark-card transition-colors"><i data-lucide="chevron-left" class="h-6 w-6"></i></button>
+                <h2 id="week-display" class="text-xl sm:text-2xl font-semibold mx-4 sm:mx-8 w-64 text-center">...</h2>
+                <button id="next-week" class="flex items-center gap-2 p-2 rounded-lg hover:bg-dark-card transition-colors"><i data-lucide="chevron-right" class="h-6 w-6"></i></button>
             </div>
             
             <!-- BUSCA -->
-            <div class="mb-6">
-                <div class="relative max-w-sm mx-auto">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i data-lucide="search" class="h-5 w-5 text-gray-400"></i>
-                    </div>
-                    <input type="text" id="search-input" placeholder="Pesquisar dia..." class="w-full bg-dark-card border border-gray-700 rounded-lg py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-custom-cyan">
-                </div>
-            </div>
+            <div class="mb-6"><div class="relative max-w-sm mx-auto"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i data-lucide="search" class="h-5 w-5 text-gray-400"></i></div><input type="text" id="search-input" placeholder="Pesquisar dia..." class="w-full bg-dark-card border border-gray-700 rounded-lg py-2 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-custom-cyan"></div></div>
             
-            <div id="manager-panels">
-                
+            <div id="manager-panels" class="hidden">
                 <!-- PAINEL DE DIVULGAÇÃO -->
-                <div id="share-panel" class="mb-8 p-6 bg-gradient-to-r from-dark-card to-gray-900 rounded-xl max-w-4xl mx-auto border border-gray-700 hidden">
-                    <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                        <i data-lucide="share-2" class="h-6 w-6 text-custom-cyan"></i>
-                        Divulgue sua Agenda
-                    </h3>
-                    <p class="text-gray-400 text-sm mb-4">Este é o link que os seus clientes devem usar para agendar horários.</p>
+                <div id="share-panel" class="mb-8 p-6 bg-gradient-to-r from-dark-card to-gray-900 rounded-xl max-w-4xl mx-auto border border-gray-700">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2"><i data-lucide="share-2" class="h-6 w-6 text-custom-cyan"></i>Divulgue sua Agenda</h3>
                     <div class="flex flex-col sm:flex-row gap-3">
                         <div class="relative flex-grow">
                             <input type="text" id="share-link-input" readonly class="w-full bg-black/30 border border-gray-600 rounded-lg py-3 px-4 text-gray-300 text-sm font-mono focus:outline-none cursor-text select-all">
-                            <button id="copy-share-link" class="absolute right-2 top-2 p-1 bg-dark-card hover:bg-gray-600 rounded text-custom-cyan transition-colors" title="Copiar">
-                                <i data-lucide="copy" class="h-5 w-5"></i>
-                            </button>
+                            <button id="copy-share-link" class="absolute right-2 top-2 p-1 bg-dark-card hover:bg-gray-600 rounded text-custom-cyan transition-colors" title="Copiar"><i data-lucide="copy" class="h-5 w-5"></i></button>
                         </div>
-                        <button id="share-whatsapp-btn" class="flex items-center justify-center gap-2 py-2 px-5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors whitespace-nowrap">
-                            <i data-lucide="message-circle" class="h-5 w-5"></i>
-                            Enviar no Zap
-                        </button>
+                        <button id="share-whatsapp-btn" class="flex items-center justify-center gap-2 py-2 px-5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition-colors whitespace-nowrap"><i data-lucide="message-circle" class="h-5 w-5"></i>Enviar no Zap</button>
                     </div>
                 </div>
 
-                <!-- PAINEL: IDENTIDADE VISUAL -->
-                <div id="visual-settings-panel" class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto border border-gray-700 hidden">
+                <!-- CONFIGURAÇÕES -->
+                <div class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto border border-gray-700">
                     <div class="flex justify-between items-center cursor-pointer" id="visual-settings-header">
-                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                            <i data-lucide="palette" class="h-6 w-6 text-purple-400"></i>
-                            Identidade Visual da Quadra
-                        </h3>
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2"><i data-lucide="settings" class="h-6 w-6 text-purple-400"></i>Configurações da Quadra</h3>
                         <button id="toggle-visual-settings" class="p-1 rounded-full hover:bg-dark-card-hover"><i data-lucide="chevron-up" class="h-6 w-6 transition-transform duration-300" style="transform: rotate(180deg);"></i></button>
                     </div>
                     <div id="visual-settings-content" class="mt-4 space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">Nome da Quadra (Ex: Society Azaleias)</label>
-                            <input type="text" id="visual-name-input" placeholder="Agendamento Society" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:ring-custom-cyan focus:border-custom-cyan">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div><label class="block text-sm font-medium text-gray-300 mb-1">Nome</label><input type="text" id="visual-name-input" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div>
+                            <div><label class="block text-sm font-medium text-gray-300 mb-1">Endereço</label><input type="text" id="visual-address-input" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">Endereço (Opcional)</label>
-                            <input type="text" id="visual-address-input" placeholder="Rua das Flores, 123 - Centro" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:ring-custom-cyan focus:border-custom-cyan">
-                        </div>
-                        
-                        <!-- NOVO: UPLOAD DE LOGO -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">Logo da Quadra (Carregar Imagem)</label>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Logo</label>
                             <div class="flex items-center gap-4">
-                                <div id="logo-preview" class="h-16 w-16 bg-gray-800 rounded-full flex items-center justify-center border border-gray-600 overflow-hidden">
-                                    <i data-lucide="image" class="h-6 w-6 text-gray-500"></i>
-                                </div>
-                                <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors border border-gray-600">
-                                    Escolher Arquivo
-                                    <input type="file" id="visual-logo-upload" accept="image/*" class="hidden">
-                                </label>
-                                <span id="file-name-display" class="text-sm text-gray-400 italic truncate max-w-[150px]">Nenhum arquivo</span>
+                                <div id="logo-preview" class="h-16 w-16 bg-gray-800 rounded-full flex items-center justify-center border border-gray-600 overflow-hidden"><i data-lucide="image" class="h-6 w-6 text-gray-500"></i></div>
+                                <label class="cursor-pointer bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors border border-gray-600">Alterar Logo<input type="file" id="visual-logo-upload" accept="image/*" class="hidden"></label>
                             </div>
-                            <p class="text-xs text-gray-500 mt-2">A imagem será redimensionada automaticamente.</p>
                         </div>
-
-                         <!-- CAMPO: ADMIN EMAIL -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-1">E-mail do Gestor (Segurança)</label>
-                            <input type="text" id="visual-admin-email-input" placeholder="admin@exemplo.com" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:ring-custom-cyan focus:border-custom-cyan">
-                            <p class="text-xs text-yellow-500 mt-1">Apenas este e-mail terá acesso ao painel de gestão desta escola.</p>
-                        </div>
-                        <div class="flex justify-end pt-2">
-                            <button id="save-visual-btn" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold transition-colors">Salvar Configurações</button>
-                        </div>
+                         <!-- Chave Pix Incorporada -->
+                         <div><label class="block text-sm font-medium text-gray-300 mb-1">Chave PIX (Para receber pagamentos)</label><input type="text" id="visual-pix-input" placeholder="CPF, Email, Telefone..." class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div>
+                        
+                        <div class="flex justify-end pt-2"><button id="save-visual-btn" class="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold transition-colors">Salvar Tudo</button></div>
+                    </div>
+                </div>
+                
+                <!-- PREÇOS -->
+                <div class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto">
+                    <div class="flex justify-between items-center cursor-pointer" id="price-manager-header">
+                        <h3 class="text-xl font-bold text-white">Tabela de Preços</h3>
+                        <button id="toggle-price-manager" class="p-1 rounded-full hover:bg-dark-card-hover"><i data-lucide="chevron-up" class="h-6 w-6 transition-transform duration-300" style="transform: rotate(180deg);"></i></button>
+                    </div>
+                    <div id="price-manager-content" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
+                        <div class="lg:col-span-3"><label class="block text-sm font-medium text-gray-300 mb-2">Dias</label><div id="day-selector" class="flex flex-wrap gap-2"></div></div>
+                        <div class="md:col-span-2"><label class="block text-sm font-medium text-gray-300 mb-2">Horário</label><div class="flex items-center gap-4"><input type="time" id="start-time-input" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"><span class="text-gray-400">até</span><input type="time" id="end-time-input" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div></div>
+                        <div class="flex gap-4 items-end"><div class="flex-grow"><label class="block text-sm font-medium text-gray-300 mb-2">Valor (R$)</label><input type="text" id="price-input" placeholder="150,00" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div><button id="apply-price-btn" class="flex-shrink-0 h-10 px-5 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80 transition-colors">Definir</button></div>
                     </div>
                 </div>
 
                 <div id="next-event-dashboard" class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto border border-custom-cyan/50">
-                    <h3 class="text-xl font-bold text-white mb-4 flex items-center"><i data-lucide="bell-ring" class="h-6 w-6 mr-3 text-custom-cyan"></i>Próximo Evento</h3>
-                    <div id="next-event-details"><p class="text-gray-400">Nenhum agendamento futuro encontrado.</p></div>
-                </div>
-                
-                <div id="price-manager" class="mb-8 p-6 bg-dark-card rounded-xl max-w-4xl mx-auto">
-                    <div class="flex justify-between items-center cursor-pointer" id="price-manager-header">
-                        <h3 class="text-xl font-bold text-white">Gerir Preços</h3>
-                        <button id="toggle-price-manager" class="p-1 rounded-full hover:bg-dark-card-hover"><i data-lucide="chevron-up" class="h-6 w-6 transition-transform duration-300" style="transform: rotate(180deg);"></i></button>
-                    </div>
-                    <div id="price-manager-content" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
-                        <div class="lg:col-span-3"><label class="block text-sm font-medium text-gray-300 mb-2">1. Selecione os dias</label><div id="day-selector" class="flex flex-wrap gap-2"></div></div>
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-300 mb-2">2. Defina o intervalo de horários</label>
-                            <div class="flex items-center gap-4">
-                                <input type="time" id="start-time-input" class="w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-custom-cyan focus:border-custom-cyan">
-                                <span class="text-gray-400">até</span>
-                                <input type="time" id="end-time-input" class="w-full bg-gray-900 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-custom-cyan focus:border-custom-cyan">
-                            </div>
-                        </div>
-                        <div class="flex gap-4 items-end">
-                            <div class="flex-grow"><label for="price-input" class="block text-sm font-medium text-gray-300 mb-2">3. Novo preço (R$)</label><input type="text" id="price-input" placeholder="150,00" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-custom-cyan focus:border-custom-cyan"></div>
-                             <button id="apply-price-btn" class="flex-shrink-0 h-10 px-5 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80 transition-colors">Aplicar</button>
-                        </div>
-                        <div class="lg:col-span-3 mt-4 pt-4 border-t border-gray-700 space-y-4">
-                            <!-- BOTÃO DE PAGAMENTO EXISTENTE -->
-                            <button id="integrate-payment-btn" class="w-full flex items-center justify-center gap-2 h-10 px-5 bg-transparent border-2 border-custom-cyan text-custom-cyan rounded-lg font-bold hover:bg-custom-cyan hover:text-black transition-colors"><i data-lucide="credit-card" class="h-5 w-5"></i>Integrar Meios de Pagamento</button>
-                            <!-- INTERRUPTOR PARA PAUSAR A INTEGRAÇÃO -->
-                            <div class="flex items-center justify-between p-3 bg-dark-bg/50 rounded-lg">
-                                <label for="sync-toggle" class="flex flex-col">
-                                    <span class="font-medium text-gray-200">Sincronizar com Financeiro</span>
-                                    <span class="text-xs text-gray-400">(Gestor FC)</span>
-                                </label>
-                                <label for="sync-toggle" class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" value="" id="sync-toggle" class="sr-only peer" checked>
-                                    <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-2 peer-focus:ring-custom-cyan peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-custom-cyan"></div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center"><i data-lucide="bell-ring" class="h-6 w-6 mr-3 text-custom-cyan"></i>Próximo Jogo</h3>
+                    <div id="next-event-details"><p class="text-gray-400">Nenhum agendamento encontrado.</p></div>
                 </div>
             </div>
 
+            <!-- KANBAN -->
             <div id="kanban-board" class="kanban-container flex gap-4 overflow-x-auto pb-4"></div>
 
-            <div id="team-sorter" class="mt-10 bg-dark-card rounded-xl p-6 max-w-4xl mx-auto">
+            <!-- SORTEIO DE TIMES -->
+            <div id="team-sorter" class="mt-10 bg-dark-card rounded-xl p-6 max-w-4xl mx-auto hidden">
                 <div id="team-sorter-header" class="flex justify-between items-center cursor-pointer">
                     <h3 class="text-2xl font-bold text-white">Sorteio de Times</h3>
                     <button id="toggle-team-sorter" class="p-1 rounded-full hover:bg-dark-card-hover"><i data-lucide="chevron-up" class="h-6 w-6 transition-transform duration-300" style="transform: rotate(180deg);"></i></button>
@@ -278,134 +196,37 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="space-y-4">
                             <div>
-                                <div class="flex justify-between items-center mb-2">
-                                    <label class="block text-sm font-medium text-gray-300">Nomes dos Jogadores</label>
-                                    <button id="add-player-btn" title="Adicionar jogador" class="flex items-center gap-1 text-sm text-custom-cyan font-semibold hover:text-opacity-80"><i data-lucide="plus-circle" class="h-4 w-4"></i>Adicionar</button>
-                                </div>
+                                <div class="flex justify-between items-center mb-2"><label class="block text-sm font-medium text-gray-300">Jogadores</label><button id="add-player-btn" class="flex items-center gap-1 text-sm text-custom-cyan font-semibold"><i data-lucide="plus-circle" class="h-4 w-4"></i>Adicionar</button></div>
                                 <div id="player-list-container" class="player-list-container space-y-2 max-h-[265px] overflow-y-auto p-1"></div>
                             </div>
-                             <div>
-                                <label for="players-per-team" class="block text-sm font-medium text-gray-300 mb-2">Jogadores de linha por time</label>
-                                <select id="players-per-team" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-custom-cyan focus:border-custom-cyan">
-                                    <option value="4">4 jogadores</option><option value="5" selected>5 jogadores</option><option value="6">6 jogadores</option>
-                                </select>
-                            </div>
-                            <button id="sort-teams-btn" class="w-full flex items-center justify-center gap-2 h-11 px-5 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80 transition-colors"><i data-lucide="shuffle" class="h-5 w-5"></i>Sortear Times</button>
+                            <div><label class="block text-sm font-medium text-gray-300 mb-2">Por time</label><select id="players-per-team" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"><option value="4">4 jogadores</option><option value="5" selected>5 jogadores</option><option value="6">6 jogadores</option></select></div>
+                            <button id="sort-teams-btn" class="w-full flex items-center justify-center gap-2 h-11 px-5 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80">Sortear</button>
                         </div>
-                        <div class="bg-dark-bg/50 p-4 rounded-lg min-h-[300px]">
-                             <h4 class="text-lg font-bold text-white text-center mb-4">Times Sorteados</h4>
-                            <div id="team-results" class="grid grid-cols-2 gap-4"><p class="text-gray-500 col-span-full text-center mt-8">Os times sorteados aparecerão aqui.</p></div>
-                        </div>
+                        <div class="bg-dark-bg/50 p-4 rounded-lg min-h-[300px]"><h4 class="text-lg font-bold text-white text-center mb-4">Resultado</h4><div id="team-results" class="grid grid-cols-2 gap-4"></div></div>
                     </div>
                 </div>
             </div>
         </main>
-        <!-- ASSINATURA DO DESENVOLVEDOR -->
-        <footer class="mt-auto p-4 text-center">
-            <a 
-                href="https://www.linkedin.com/in/jardel-feitosa96/?trk=opento_sprofile_topcard" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-custom-cyan transition-colors duration-300"
-            >
-                <i data-lucide="code" class="h-4 w-4"></i>
-                <span>Desenvolvido por Jardel Feitosa</span>
-            </a>
-        </footer>
-    </div>
+        
+        <footer class="mt-auto p-4 text-center"><a href="#" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-custom-cyan transition-colors duration-300"><i data-lucide="code" class="h-4 w-4"></i><span>Sistema de Agendamento</span></a></footer>
     </div>
 
-    <!-- Modais -->
-    <div id="booking-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
-        <div class="bg-dark-card rounded-xl shadow-2xl p-8 w-full max-w-md m-4 transform transition-all duration-300 scale-95 opacity-0">
-            <h3 class="text-2xl font-bold text-white mb-2">Confirmar Agendamento</h3>
-            <p id="modal-details" class="text-gray-400 mb-6"></p>
-            <div class="space-y-4">
-                <div><label for="name" class="block text-sm font-medium text-gray-300">Seu Nome</label><input type="text" id="name" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-custom-cyan"></div>
-                <div><label for="phone" class="block text-sm font-medium text-gray-300">Seu Telefone (WhatsApp)</label><input type="tel" id="phone" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-custom-cyan"></div>
-            </div>
-            <div class="mt-8 flex justify-end gap-4"><button id="cancel-button" class="py-2 px-5 bg-dark-card-hover rounded-lg font-semibold hover:bg-gray-600">Cancelar</button><button id="confirm-button" class="py-2 px-5 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80">Confirmar</button></div>
-        </div>
-    </div>
+    <!-- Modais e Toast (Simplificados) -->
+    <div id="toast-notification" class="fixed bottom-5 right-5 bg-dark-card border-l-4 border-custom-cyan text-white p-4 rounded-lg shadow-lg flex items-center gap-4 max-w-sm transition-all duration-500 transform translate-x-[calc(100%+20px)] opacity-0 z-[200]"><div id="toast-icon"></div><p id="toast-message" class="text-sm"></p></div>
+    
+    <!-- Modal Booking -->
+    <div id="booking-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden"><div class="bg-dark-card rounded-xl p-8 w-full max-w-md m-4 transform transition-all scale-95 opacity-0"><h3 class="text-2xl font-bold text-white mb-2">Confirmar</h3><p id="modal-details" class="text-gray-400 mb-6"></p><div class="space-y-4"><input type="text" id="name" placeholder="Seu Nome" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"><input type="tel" id="phone" placeholder="WhatsApp" class="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white"></div><div class="mt-8 flex justify-end gap-4"><button id="cancel-button" class="py-2 px-5 bg-gray-700 rounded-lg">Voltar</button><button id="confirm-button" class="py-2 px-5 bg-custom-cyan text-black rounded-lg font-bold">Confirmar</button></div></div></div>
+    
+    <!-- Modal Pix -->
+    <div id="pix-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden"><div class="bg-dark-card rounded-xl p-8 w-full max-w-md m-4 text-center transform transition-all scale-95 opacity-0"><i data-lucide="check-circle" class="h-12 w-12 text-green-400 mx-auto mb-4"></i><h3 class="text-2xl font-bold text-white">Pré-reserva feita!</h3><p class="text-gray-400 my-4">Faça o PIX para garantir.</p><div class="bg-dark-bg/50 p-4 rounded-lg"><p class="text-sm text-gray-300">Chave:</p><p id="pix-key-display" class="font-mono text-lg text-custom-cyan break-all">Selecione no Config</p></div><button id="close-pix-btn" class="mt-6 w-full py-2 bg-custom-cyan text-black rounded-lg font-bold">Entendido</button></div></div>
 
-    <div id="pix-payment-info-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
-        <div class="bg-dark-card rounded-xl shadow-2xl p-8 w-full max-w-md m-4 text-center transform transition-all duration-300 scale-95 opacity-0">
-            <i data-lucide="check-circle" class="h-12 w-12 text-green-400 mx-auto mb-4"></i>
-            <h3 class="text-2xl font-bold text-white mb-2">Pré-reserva efetuada!</h3>
-            <p class="text-gray-400 mb-6">Para confirmar, realize o pagamento via PIX em até 2 horas. Após o pagamento, clique em "Já paguei".</p>
-            <div class="bg-dark-bg/50 p-4 rounded-lg space-y-2"><p class="text-sm text-gray-300">Chave PIX (Copia e Cola):</p><p id="pix-key-display" class="font-mono text-lg text-custom-cyan break-words"></p></div>
-            <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center"><button id="copy-pix-key-button" class="flex-1 flex items-center justify-center gap-2 py-2 px-5 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80"><i data-lucide="copy" class="h-5 w-5"></i>Copiar Chave</button></div>
-             <button id="close-pix-info-button" class="mt-4 w-full text-center py-2 text-gray-400 hover:text-white">Entendido</button>
-        </div>
-    </div>
+    <!-- Modal Cancelamento -->
+    <div id="cancel-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden"><div class="bg-dark-card rounded-xl p-8 w-full max-w-sm m-4 transform transition-all scale-95 opacity-0"><h3 class="text-xl font-bold text-white mb-4">Cancelar?</h3><div class="flex justify-end gap-4"><button id="cancel-no" class="py-2 px-5 bg-gray-700 rounded-lg">Não</button><button id="cancel-yes" class="py-2 px-5 bg-red-600 text-white rounded-lg font-bold">Sim, cancelar</button></div></div></div>
 
-    <div id="cancel-confirm-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
-        <div class="bg-dark-card rounded-xl shadow-2xl p-8 w-full max-w-sm m-4 transform transition-all duration-300 scale-95 opacity-0">
-            <h3 class="text-xl font-bold text-white mb-4">Confirmar Desistência</h3>
-            <p class="text-gray-400 mb-6">Tem a certeza de que deseja cancelar esta pré-reserva?</p>
-            <div class="flex justify-end gap-4"><button id="cancel-decline-button" class="py-2 px-5 bg-dark-card-hover rounded-lg font-semibold hover:bg-gray-600">Voltar</button><button id="cancel-confirm-button" class="py-2 px-5 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700">Sim, Desistir</button></div>
-        </div>
-    </div>
-
-    <div id="manager-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
-        <div class="bg-dark-card rounded-xl shadow-2xl p-8 w-full max-w-md m-4 transform transition-all duration-300 scale-95 opacity-0">
-            <h3 id="manager-modal-title" class="text-2xl font-bold text-white mb-2"></h3>
-            <div id="manager-view-container"><div id="manager-modal-details" class="text-gray-300 mb-6 space-y-2 border-t border-b border-gray-700 py-4"></div></div>
-            <div id="manager-form-container" class="hidden">
-                 <p id="manager-form-details" class="text-gray-400 mb-6"></p>
-                 <fieldset class="mb-6">
-                    <legend class="block text-sm font-medium text-gray-300 mb-2">Tipo de Agendamento</legend>
-                    <div class="flex gap-4">
-                        <div class="flex items-center"><input id="manager-booking-type-single" name="manager-booking-type" type="radio" value="avulso" checked class="h-4 w-4 text-custom-cyan bg-gray-700 border-gray-600 focus:ring-custom-cyan focus:ring-2"><label for="manager-booking-type-single" class="ml-2 block text-sm text-gray-200">Avulso</label></div>
-                        <div class="flex items-center"><input id="manager-booking-type-monthly" name="manager-booking-type" type="radio" value="mensal" class="h-4 w-4 text-custom-cyan bg-gray-700 border-gray-600 focus:ring-custom-cyan focus:ring-2"><label for="manager-booking-type-monthly" class="ml-2 block text-sm text-gray-200">Mensal</label></div>
-                    </div>
-                </fieldset>
-                 <div class="space-y-4">
-                    <div><label for="manager-name" class="block text-sm font-medium text-gray-300">Nome do Cliente</label><input type="text" id="manager-name" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-custom-cyan"></div>
-                    <div><label for="manager-phone" class="block text-sm font-medium text-gray-300">Telefone do Cliente</label><input type="tel" id="manager-phone" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-custom-cyan"></div>
-                </div>
-            </div>
-            <div id="manager-actions" class="mt-6 flex flex-wrap justify-end gap-4"></div>
-        </div>
-    </div>
-
-    <!-- MODAL DE ADICIONAR HORÁRIO -->
-    <div id="add-slot-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
-        <div class="bg-dark-card rounded-xl shadow-2xl p-8 w-full max-w-md m-4 transform transition-all duration-300 scale-95 opacity-0">
-            <h3 class="text-2xl font-bold text-white mb-2">Adicionar na Agenda</h3>
-            <p id="add-slot-modal-details" class="text-gray-400 mb-6"></p>
-            <div id="slot-fields" class="space-y-4">
-                <div class="flex gap-4">
-                    <div class="w-1/2"><label for="new-start-time" class="block text-sm font-medium text-gray-300">Início</label><input type="time" id="new-start-time" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-custom-cyan"></div>
-                    <div class="w-1/2"><label for="new-end-time" class="block text-sm font-medium text-gray-300">Fim</label><input type="time" id="new-end-time" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-custom-cyan"></div>
-                </div>
-                <div><label for="new-price" class="block text-sm font-medium text-gray-300">Preço (R$)</label><input type="text" id="new-price" placeholder="150,00" class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-custom-cyan"></div>
-            </div>
-            <div class="mt-8 flex justify-end gap-4">
-                <button id="cancel-add-slot-button" class="py-2 px-5 bg-dark-card-hover rounded-lg font-semibold hover:bg-gray-600">Cancelar</button>
-                <button id="confirm-add-slot-button" class="py-2 px-5 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80">Adicionar Horário</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
-        <div class="bg-dark-card rounded-xl shadow-2xl p-8 w-full max-w-md m-4 transform transition-all duration-300 scale-95 opacity-0">
-            <h3 class="text-2xl font-bold text-white mb-2">Configurar Pagamento PIX</h3>
-            <p class="text-gray-400 mb-6">A chave PIX que guardar aqui será mostrada aos clientes.</p>
-            <div><label for="pix-key-input" class="block text-sm font-medium text-gray-300">Sua Chave PIX</label><input type="text" id="pix-key-input" placeholder="Telefone, e-mail, etc." class="mt-1 block w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-custom-cyan"></div>
-            <div class="mt-8 flex justify-end gap-4"><button id="cancel-payment-button" class="py-2 px-5 bg-dark-card-hover rounded-lg font-semibold hover:bg-gray-600">Cancelar</button><button id="save-payment-button" class="py-2 px-5 bg-custom-cyan text-black rounded-lg font-bold hover:bg-opacity-80">Guardar</button></div>
-        </div>
-    </div>
-
-    <div id="toast-notification" class="fixed bottom-5 right-5 bg-dark-card border-l-4 border-custom-cyan text-white p-4 rounded-lg shadow-lg flex items-center gap-4 max-w-sm transition-all duration-500 transform translate-x-[calc(100%+20px)] opacity-0 z-[101]">
-        <div id="toast-icon"></div><p id="toast-message" class="text-sm"></p>
-    </div>
-
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        import { getFirestore, collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDcY1-29jWmbnpBDePgAmJfWhr79Nsl7Ug",
@@ -416,489 +237,462 @@
             appId: "1:643691351263:web:6ad71343afed3a0305ad6a",
             measurementId: "G-BZQ57SN00Q"
         };
+        
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-
-        // --- LÓGICA MULTI-TENANT ---
-
-        function getQueryParam(param) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(param);
-        }
-
-        const escolaId = getQueryParam('escolaId');
-        const userRole = getQueryParam('role'); // Apenas um sinalizador, não dá permissão real
-
-        // Função global para referências
-        function getScopedCollectionRef(collectionName) {
-            if (escolaId) {
-                const escolaRef = doc(db, 'escolas', escolaId);
-                return collection(escolaRef, collectionName);
-            }
-            console.error("Tentativa de acesso sem ID de escola. Bloqueado.");
-            throw new Error("Acesso negado: ID da escola ausente.");
-        }
-
-        if (!escolaId) {
-            document.getElementById('error-screen').classList.remove('hidden');
-            throw new Error("ID da Escola não encontrado."); 
-        }
-
-        // --- ESTADO GLOBAL ---
-        let adminEmailRequired = null; // Vai armazenar o e-mail oficial do admin dessa escola
-        let isManagerView = false;
+        // --- GESTÃO DE ESTADO E ROTEAMENTO ---
+        let currentArenaId = new URLSearchParams(window.location.search).get('arenaId');
         let currentUser = null;
-        let firebaseReady = false;
-        let schedules = {}, monthlySchedules = {}, priceRules = {}, paymentConfig = {};
-        let syncWithFinance = localStorage.getItem('syncWithFinance') !== 'false';
-        // Variável nova para armazenar a Logo convertida
-        let currentLogoBase64 = null;
+        let isManagerView = false;
+        let arenaData = null; // Dados da quadra carregados
         
-        // Variáveis de UI
+        // Dados Reativos
+        let schedules = {};
+        let monthlySchedules = {};
+        let currentLogoBase64 = null; // Para upload
+
+        // UI References
         const loginScreen = document.getElementById('login-screen');
+        const setupScreen = document.getElementById('setup-screen');
         const appContainer = document.getElementById('app-container');
-        const adminControls = document.getElementById('admin-controls');
-
-        document.addEventListener('DOMContentLoaded', () => {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        
+        // --- 1. SISTEMA DE LOGIN INTELIGENTE ---
+        
+        // Verifica se tem link de arena OU se o usuário logou
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
             
-            // UI References
-            const viewToggle = document.getElementById('view-toggle');
-            const viewToggleContainer = document.getElementById('view-toggle-container');
-            const loginEmailInput = document.getElementById('login-email');
-            const loginPassInput = document.getElementById('login-password');
-            const loginBtn = document.getElementById('login-btn');
-            const loginError = document.getElementById('login-error');
-            const logoutBtn = document.getElementById('logout-btn');
-            const weekDisplay = document.getElementById('week-display');
-            const kanbanBoard = document.getElementById('kanban-board'), prevWeekBtn = document.getElementById('prev-week'), nextWeekBtn = document.getElementById('next-week');
-            const searchInput = document.getElementById('search-input');
-            const managerPanels = document.getElementById('manager-panels');
-            const bookingModal = document.getElementById('booking-modal'), bookingModalContent = bookingModal.querySelector('div'), modalDetails = document.getElementById('modal-details');
-            const pixPaymentInfoModal = document.getElementById('pix-payment-info-modal'), pixPaymentInfoModalContent = pixPaymentInfoModal.querySelector('div'), pixKeyDisplay = document.getElementById('pix-key-display');
-            const cancelConfirmModal = document.getElementById('cancel-confirm-modal'), cancelConfirmModalContent = cancelConfirmModal.querySelector('div');
-            const managerModal = document.getElementById('manager-modal'), managerModalContent = managerModal.querySelector('.bg-dark-card');
-            const paymentModal = document.getElementById('payment-modal'), paymentModalContent = paymentModal.querySelector('div');
-            const addSlotModal = document.getElementById('add-slot-modal'), addSlotModalContent = addSlotModal.querySelector('div');
-            const toastNotification = document.getElementById('toast-notification'), toastMessage = document.getElementById('toast-message'), toastIcon = document.getElementById('toast-icon');
-            const syncToggle = document.getElementById('sync-toggle');
-            const sharePanel = document.getElementById('share-panel'), shareLinkInput = document.getElementById('share-link-input'), copyShareLinkBtn = document.getElementById('copy-share-link'), shareWhatsappBtn = document.getElementById('share-whatsapp-btn');
-            const visualSettingsPanel = document.getElementById('visual-settings-panel'), visualSettingsHeader = document.getElementById('visual-settings-header'), visualSettingsContent = document.getElementById('visual-settings-content'), toggleVisualSettingsBtn = document.getElementById('toggle-visual-settings');
-            const teamSorter = document.getElementById('team-sorter'), teamSorterHeader = document.getElementById('team-sorter-header'), teamSorterContent = document.getElementById('team-sorter-content'), toggleTeamSorterBtn = document.getElementById('toggle-team-sorter');
-            const priceManagerContent = document.getElementById('price-manager-content'), togglePriceManagerBtn = document.getElementById('toggle-price-manager'), priceManagerHeader = document.getElementById('price-manager-header');
-            const nextEventDetails = document.getElementById('next-event-details');
-            const playerListContainer = document.getElementById('player-list-container'), teamResults = document.getElementById('team-results');
-            const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-            const defaultTimeSlots = ['18:00 - 19:00', '19:00 - 20:00', '20:00 - 21:00', '21:00 - 22:00', '22:00 - 23:00'];
-            let currentWeekStart = getMonday(new Date());
-
-
-            // --- FLUXO DE INICIALIZAÇÃO ---
-
-            // 1. Carrega dados visuais (públicos) e descobre quem é o ADMIN
-            loadVisualIdentity().then(data => {
-                adminEmailRequired = data?.adminEmail || null;
-                initAuth(); // Só inicia auth depois de saber quem deve ser o admin
-            });
-
-            // 2. Configuração de Autenticação
-            function initAuth() {
-                onAuthStateChanged(auth, (user) => {
-                    currentUser = user;
-                    
-                    if (userRole === 'admin') {
-                        // Se o link diz que é admin, precisamos verificar
-                        checkAdminAccess(user);
-                    } else {
-                        // Se é cliente, acesso liberado (anônimo se precisar)
-                        if (!user) signInAnonymously(auth).catch(e => console.error(e));
-                        showApp(false); // Modo Cliente
-                    }
-                });
-            }
-
-            // 3. Verificação de Segurança para Admin
-            function checkAdminAccess(user) {
-                // Se não tem usuário, ou se o usuário logado não bate com o e-mail da escola
-                if (!user || (adminEmailRequired && user.email !== adminEmailRequired)) {
-                    // SE NÃO ESTIVER AUTENTICADO CORRETAMENTE:
-                    // Se estiver logado com conta errada, desloga
-                    if (user && user.isAnonymous === false) signOut(auth);
-                    
-                    // Mostra tela de login
+            if (currentArenaId) {
+                // MODO CLIENTE (Com link) ou ADMIN já identificado
+                loadArena(currentArenaId);
+                if (user && !user.isAnonymous) {
+                    // Verifica se esse user é o dono dessa arena
+                    checkIfOwner(user, currentArenaId);
+                } else {
+                    if(!user) signInAnonymously(auth); // Cliente anônimo
+                    showApp(false);
+                }
+            } else {
+                // SEM LINK: Tela de Login
+                if (user && !user.isAnonymous) {
+                    // Usuário logado sem link -> Procura a arena dele
+                    findUserArena(user.email);
+                } else {
+                    // Ninguém logado -> Mostra Login
                     loginScreen.classList.remove('hidden');
-                    appContainer.classList.add('hidden');
-                } else {
-                    // SUCESSO: Usuário logado e é o admin correto
-                    loginScreen.classList.add('hidden');
-                    showApp(true); // Modo Gestor
                 }
             }
+        });
 
-            // 4. Lógica do Botão de Login
-            loginBtn.addEventListener('click', () => {
-                const email = loginEmailInput.value;
-                const password = loginPassInput.value;
-                
-                if (!email || !password) {
-                    loginError.textContent = "Preencha todos os campos.";
-                    loginError.classList.remove('hidden');
-                    return;
-                }
-
-                // Opcional: Validar se o e-mail digitado é o esperado antes de bater no Firebase
-                if (adminEmailRequired && email !== adminEmailRequired) {
-                     loginError.textContent = "Este e-mail não tem permissão para gerenciar esta quadra.";
-                     loginError.classList.remove('hidden');
-                     return;
-                }
-
-                loginError.classList.add('hidden');
-                loginBtn.textContent = "Entrando...";
-                loginBtn.disabled = true;
-
-                signInWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
-                        // O onAuthStateChanged vai capturar isso e chamar checkAdminAccess
-                        // que vai liberar a tela
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                        loginBtn.textContent = "Entrar";
-                        loginBtn.disabled = false;
-                        loginError.textContent = "E-mail ou senha incorretos.";
-                        loginError.classList.remove('hidden');
-                    });
-            });
-
-            // 5. Logout
-            logoutBtn.addEventListener('click', () => {
-                signOut(auth).then(() => {
-                    window.location.reload(); // Recarrega para limpar estado
+        // Botão de Login
+        document.getElementById('login-btn').addEventListener('click', () => {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+            loadingOverlay.classList.remove('hidden');
+            
+            signInWithEmailAndPassword(auth, email, pass)
+                .then((cred) => {
+                    // O onAuthStateChanged vai lidar com o resto
+                })
+                .catch(err => {
+                    loadingOverlay.classList.add('hidden');
+                    document.getElementById('login-error').textContent = "Erro ao entrar. Verifique seus dados.";
+                    document.getElementById('login-error').classList.remove('hidden');
                 });
+        });
+
+        // Procurar Arena do Usuário
+        async function findUserArena(email) {
+            loadingOverlay.classList.remove('hidden');
+            // Busca na coleção 'arenas' onde adminEmail == email
+            const q = query(collection(db, 'arenas'), where('adminEmail', '==', email));
+            const snapshot = await getDocs(q);
+            
+            if (!snapshot.empty) {
+                // Achou! Entra na arena
+                const doc = snapshot.docs[0];
+                currentArenaId = doc.id;
+                
+                // Atualiza URL sem recarregar para facilitar share
+                const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?arenaId=' + currentArenaId;
+                window.history.pushState({path:newUrl},'',newUrl);
+                
+                loadArena(currentArenaId);
+                showApp(true); // É admin
+            } else {
+                // Não tem arena ainda -> Tela de Setup
+                loadingOverlay.classList.add('hidden');
+                loginScreen.classList.add('hidden');
+                setupScreen.classList.remove('hidden');
+            }
+        }
+
+        // Criar Nova Arena (Setup)
+        document.getElementById('create-arena-btn').addEventListener('click', async () => {
+            const name = document.getElementById('setup-name').value;
+            const address = document.getElementById('setup-address').value;
+            if(!name) return alert("Nome é obrigatório");
+            
+            const btn = document.getElementById('create-arena-btn');
+            btn.textContent = "Criando...";
+            
+            try {
+                // Cria documento na raiz 'arenas'
+                const docRef = await addDoc(collection(db, 'arenas'), {
+                    name: name,
+                    address: address,
+                    adminEmail: currentUser.email, // Vincula ao dono
+                    createdAt: new Date().toISOString(),
+                    priceRules: { default: { '18:00 - 19:00': '150,00', '19:00 - 20:00': '150,00', '20:00 - 21:00': '180,00' } }
+                });
+                
+                currentArenaId = docRef.id;
+                const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?arenaId=' + currentArenaId;
+                window.history.pushState({path:newUrl},'',newUrl);
+                
+                setupScreen.classList.add('hidden');
+                loadArena(currentArenaId);
+                showApp(true);
+                
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao criar quadra.");
+                btn.textContent = "Tentar Novamente";
+            }
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            signOut(auth).then(() => window.location.href = window.location.pathname); // Limpa URL
+        });
+
+        // --- 2. CARREGAMENTO DA ARENA ---
+
+        async function loadArena(id) {
+            // Escuta o documento principal da Arena (Configs, Logo, etc)
+            onSnapshot(doc(db, 'arenas', id), (docSnap) => {
+                if (docSnap.exists()) {
+                    arenaData = docSnap.data();
+                    updateUIIdentity(arenaData);
+                    // Atualiza configurações nos inputs
+                    if(isManagerView) populateSettings(arenaData);
+                }
             });
 
-            function showApp(isManager) {
-                isManagerView = isManager;
-                appContainer.classList.remove('hidden');
-                
-                // Configura UI baseada no nível de acesso
-                if (isManager) {
-                    viewToggleContainer.classList.remove('hidden');
-                    viewToggleContainer.classList.add('flex');
-                    viewToggle.checked = true;
-                    adminControls.classList.remove('hidden'); // Mostra botão sair
-                    adminControls.classList.add('flex');
-                    setupSharePanel();
-                    updateManagerPanelsVisibility(false);
-                } else {
-                    viewToggleContainer.classList.add('hidden');
-                    adminControls.classList.add('hidden');
-                    document.getElementById('manager-panels').classList.add('hidden');
-                }
-
-                // Inicia listeners de dados apenas agora (evita erro de permissão)
-                if (!firebaseReady) {
-                    setupFirestoreListeners();
-                    firebaseReady = true;
-                }
-                
-                // Outras inits
-                initPriceManager();
-                addPlayerInput();
-                lucide.createIcons();
-                setInterval(checkExpiredReservations, 60000);
-            }
-
-            // --- MANIPULAÇÃO DE DADOS ---
-
-            async function loadVisualIdentity() {
-                if (!escolaId) return null;
-                try {
-                    const docRef = doc(getScopedCollectionRef('configurations'), 'visualIdentity');
-                    const docSnap = await getDoc(docRef);
-                    
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        applyVisualIdentity(data);
-                        
-                        // Preenche inputs do admin
-                        const visualNameInput = document.getElementById('visual-name-input');
-                        const visualAddressInput = document.getElementById('visual-address-input');
-                        // Se houver logo salva, atualiza a variável global e o preview
-                        if (data.logoUrl) {
-                            currentLogoBase64 = data.logoUrl;
-                            const preview = document.getElementById('logo-preview');
-                            preview.innerHTML = `<img src="${data.logoUrl}" class="w-full h-full object-cover">`;
-                            preview.classList.remove('border-gray-600', 'bg-gray-800');
-                        }
-
-                        const visualAdminEmailInput = document.getElementById('visual-admin-email-input');
-
-                        if (visualNameInput) visualNameInput.value = data.name || '';
-                        if (visualAddressInput) visualAddressInput.value = data.address || '';
-                        if (visualAdminEmailInput) visualAdminEmailInput.value = data.adminEmail || '';
-
-                        return data;
-                    }
-                    return null;
-                } catch (e) {
-                    console.error("Erro ao carregar identidade:", e);
-                    return null;
-                }
-            }
-
-            function applyVisualIdentity(data) {
-                const headerSchoolName = document.getElementById('header-school-name');
-                const headerSchoolAddress = document.getElementById('header-school-address');
-                const headerLogoContainer = document.getElementById('header-logo-container');
-                const loginSchoolName = document.getElementById('login-school-name');
-
-                if (data.name) {
-                    headerSchoolName.textContent = data.name;
-                    document.title = data.name;
-                    if(loginSchoolName) loginSchoolName.textContent = data.name;
-                }
-                if (data.address) {
-                    headerSchoolAddress.querySelector('span').textContent = data.address;
-                    headerSchoolAddress.classList.remove('hidden');
-                } else {
-                    headerSchoolAddress.classList.add('hidden');
-                }
-                if (data.logoUrl) {
-                    headerLogoContainer.innerHTML = `<img src="${data.logoUrl}" alt="Logo" class="w-full h-full object-cover">`;
-                    headerLogoContainer.classList.remove('bg-gray-800', 'border-gray-600');
-                    headerLogoContainer.classList.add('border-transparent');
-                }
-            }
-
-            // NOVA LÓGICA DE UPLOAD E COMPRESSÃO DE IMAGEM
-            const logoUploadInput = document.getElementById('visual-logo-upload');
-            const logoPreview = document.getElementById('logo-preview');
-            const fileNameDisplay = document.getElementById('file-name-display');
-
-            logoUploadInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                fileNameDisplay.textContent = file.name;
-                
-                // Lê o arquivo
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        // Comprimir imagem usando Canvas
-                        compressImage(img).then(base64 => {
-                            currentLogoBase64 = base64; // Guarda na variável para salvar depois
-                            logoPreview.innerHTML = `<img src="${base64}" class="w-full h-full object-cover">`;
-                            logoPreview.classList.remove('border-gray-600', 'bg-gray-800');
-                        });
-                    };
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
+            // Escuta sub-coleção de agendamentos
+            onSnapshot(collection(db, 'arenas', id, 'agendamentos'), (snap) => {
+                schedules = {};
+                snap.forEach(d => schedules[d.id] = d.data());
+                renderKanban();
             });
+        }
 
-            function compressImage(img) {
-                return new Promise((resolve) => {
+        function checkIfOwner(user, arenaId) {
+            // Verifica no banco se o email bate (segurança frontend)
+            // A segurança real vem das Rules do Firestore
+            getDoc(doc(db, 'arenas', arenaId)).then(snap => {
+                if(snap.exists() && snap.data().adminEmail === user.email) {
+                    showApp(true); // Libera Admin
+                } else {
+                    showApp(false); // Visitante
+                }
+            });
+        }
+
+        function showApp(isManager) {
+            isManagerView = isManager;
+            loginScreen.classList.add('hidden');
+            setupScreen.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            
+            const adminControls = document.getElementById('admin-controls');
+            const viewToggleContainer = document.getElementById('view-toggle-container');
+            const managerPanels = document.getElementById('manager-panels');
+            const teamSorter = document.getElementById('team-sorter');
+
+            if (isManager) {
+                adminControls.classList.remove('hidden');
+                adminControls.classList.add('flex');
+                viewToggleContainer.classList.remove('hidden');
+                viewToggleContainer.classList.add('flex');
+                document.getElementById('view-toggle').checked = true;
+                managerPanels.classList.remove('hidden');
+                teamSorter.classList.add('hidden');
+                setupShareLink();
+            } else {
+                adminControls.classList.add('hidden');
+                viewToggleContainer.classList.add('hidden');
+                managerPanels.classList.add('hidden');
+                // Se quiser mostrar o sorteio para clientes, remova o hidden abaixo
+                teamSorter.classList.add('hidden'); 
+            }
+            
+            renderKanban();
+            lucide.createIcons();
+        }
+
+        // --- 3. UI E LÓGICA DO APP ---
+
+        function updateUIIdentity(data) {
+            document.getElementById('header-school-name').textContent = data.name || "Minha Quadra";
+            document.title = data.name || "Agendamento";
+            
+            const addr = document.getElementById('header-school-address');
+            if(data.address) {
+                addr.querySelector('span').textContent = data.address;
+                addr.classList.remove('hidden');
+            }
+            
+            if(data.logo) {
+                const div = document.getElementById('header-logo-container');
+                div.innerHTML = `<img src="${data.logo}" class="w-full h-full object-cover">`;
+                div.classList.remove('border-gray-600', 'bg-gray-800');
+            }
+            
+            // PixKey para o modal
+            const pixDisplay = document.getElementById('pix-key-display');
+            pixDisplay.textContent = data.pixKey || "Solicite ao balcão";
+        }
+
+        function populateSettings(data) {
+            document.getElementById('visual-name-input').value = data.name || '';
+            document.getElementById('visual-address-input').value = data.address || '';
+            document.getElementById('visual-pix-input').value = data.pixKey || '';
+            
+            if(data.logo) {
+                const p = document.getElementById('logo-preview');
+                p.innerHTML = `<img src="${data.logo}" class="w-full h-full object-cover">`;
+                p.classList.remove('bg-gray-800');
+                currentLogoBase64 = data.logo;
+            }
+            
+            // Preencher preços se necessário (aqui simplificado)
+        }
+        
+        // --- UPLOAD E SALVAMENTO ---
+        
+        // Upload de Imagem
+        document.getElementById('visual-logo-upload').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Compressão rápida
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 300; // Tamanho pequeno para não pesar
-                    const MAX_HEIGHT = 300;
-                    let width = img.width;
-                    let height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    const max = 200; // Bem pequeno para base64
+                    let w = img.width, h = img.height;
+                    if(w>h){ if(w>max){h*=max/w; w=max;}} else { if(h>max){w*=max/h; h=max;}}
+                    canvas.width=w; canvas.height=h;
+                    ctx.drawImage(img,0,0,w,h);
+                    currentLogoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    
+                    const p = document.getElementById('logo-preview');
+                    p.innerHTML = `<img src="${currentLogoBase64}" class="w-full h-full object-cover">`;
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
 
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
+        // Salvar Configurações (Tudo no doc da Arena)
+        document.getElementById('save-visual-btn').addEventListener('click', async () => {
+            if(!currentArenaId) return;
+            const name = document.getElementById('visual-name-input').value;
+            const address = document.getElementById('visual-address-input').value;
+            const pix = document.getElementById('visual-pix-input').value;
+            
+            try {
+                await updateDoc(doc(db, 'arenas', currentArenaId), {
+                    name: name,
+                    address: address,
+                    pixKey: pix,
+                    logo: currentLogoBase64
+                });
+                showToast("Configurações salvas!");
+            } catch(e) {
+                console.error(e);
+                showToast("Erro ao salvar.", false);
+            }
+        });
+        
+        // Salvar Preço
+        document.getElementById('apply-price-btn').addEventListener('click', async () => {
+            const price = document.getElementById('price-input').value;
+            const start = document.getElementById('start-time-input').value;
+            const end = document.getElementById('end-time-input').value;
+            
+            if(!price || !start || !end) return showToast("Preencha tudo", false);
+            
+            // Estrutura simplificada de preços no doc da arena
+            const key = `${start} - ${end}`;
+            const update = {};
+            update[`priceRules.default.${key}`] = price;
+            
+            try {
+                await updateDoc(doc(db, 'arenas', currentArenaId), update);
+                showToast("Preço adicionado!");
+            } catch(e) {
+                showToast("Erro ao salvar preço", false);
+            }
+        });
+
+        // --- KANBAN E AGENDAMENTO ---
+        
+        // (Resumo da lógica de Kanban para caber no arquivo)
+        const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+        let currentMonday = getMonday(new Date());
+
+        function getMonday(d) { d = new Date(d); var day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6 : 1); return new Date(d.setDate(diff)); }
+        
+        function renderKanban() {
+            const board = document.getElementById('kanban-board');
+            board.innerHTML = '';
+            const startDate = new Date(currentMonday);
+            
+            document.getElementById('week-display').textContent = `${startDate.getDate()}/${startDate.getMonth()+1} - ...`;
+
+            for(let i=0; i<7; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+                const dayName = dayNames[date.getDay()];
+                const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+                
+                const col = document.createElement('div');
+                col.className = 'w-72 flex-shrink-0 bg-dark-card rounded-xl border border-gray-700 p-4';
+                col.innerHTML = `<h3 class="font-bold mb-4">${dayName} <span class="text-gray-500 text-sm">${date.getDate()}/${date.getMonth()+1}</span></h3>`;
+                
+                const slotsContainer = document.createElement('div');
+                slotsContainer.className = 'space-y-3';
+                
+                // Pega horários do doc da arena ou usa default
+                const rules = arenaData?.priceRules?.default || {'18:00 - 19:00': '100,00'};
+                const sortedSlots = Object.keys(rules).sort();
+                
+                sortedSlots.forEach(time => {
+                    const price = rules[time];
+                    const slotId = `${dateStr}_${time}`;
+                    const booking = schedules[slotId];
+                    
+                    const btn = document.createElement('button');
+                    btn.className = 'w-full text-left p-3 rounded-lg transition-all border border-transparent';
+                    
+                    if (booking) {
+                        // Reservado
+                        if(isManagerView) {
+                            btn.className += ' bg-red-900/30 border-red-500/30 hover:bg-red-900/50';
+                            btn.innerHTML = `<div class="flex justify-between text-red-200 font-bold"><span>${time}</span><span>Reservado</span></div><div class="text-xs text-red-300 mt-1">${booking.clientName}</div>`;
+                            btn.onclick = () => openCancelModal(slotId);
+                        } else {
+                            // Visão Cliente (Se for meu, mostro diferente)
+                            btn.disabled = true;
+                            btn.className += ' bg-gray-800 opacity-50 cursor-not-allowed';
+                            btn.innerHTML = `<div class="flex justify-between text-gray-500"><span>${time}</span><span>Ocupado</span></div>`;
                         }
                     } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
-                        }
+                        // Livre
+                        btn.className += ' bg-dark-card-hover hover:bg-custom-cyan hover:text-black group';
+                        btn.innerHTML = `<div class="flex justify-between font-semibold"><span>${time}</span><span class="text-custom-cyan group-hover:text-black">R$ ${price}</span></div>`;
+                        btn.onclick = () => openBookingModal(slotId, time, price, dateStr, dayName);
                     }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Retorna Base64 comprimido (JPEG qualidade 0.7)
-                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    slotsContainer.appendChild(btn);
                 });
-            }
-
-            // Salvar Identidade (Atualizado para usar a variável currentLogoBase64)
-            document.getElementById('save-visual-btn').addEventListener('click', async () => {
-                const name = document.getElementById('visual-name-input').value.trim();
-                const address = document.getElementById('visual-address-input').value.trim();
-                const adminEmail = document.getElementById('visual-admin-email-input').value.trim();
                 
-                // Usa a variável global que guarda a imagem comprimida (ou a antiga)
-                const logoUrl = currentLogoBase64 || ''; 
-
-                try {
-                    const data = { name, address, logoUrl, adminEmail }; // Salva o email também
-                    await setDoc(doc(getScopedCollectionRef('configurations'), 'visualIdentity'), data);
-                    applyVisualIdentity(data);
-                    adminEmailRequired = adminEmail; // Atualiza regra localmente
-                    showToast("Configurações salvas!");
-                } catch (e) {
-                    showToast("Erro ao salvar.", false);
-                    console.error(e);
-                }
-            });
-
-            // Setup Listeners (Só roda depois da auth ser verificada)
-            function setupFirestoreListeners() {
-                 onSnapshot(getScopedCollectionRef('schedules'), snap => {
-                    schedules = {}; 
-                    snap.forEach(doc => schedules[doc.id] = doc.data()); 
-                    if(firebaseReady) renderBasedOnCurrentView(); 
-                });
-                onSnapshot(getScopedCollectionRef('monthlySchedules'), snap => { 
-                    monthlySchedules = {}; 
-                    snap.forEach(doc => monthlySchedules[doc.id] = doc.data()); 
-                    if(firebaseReady) renderBasedOnCurrentView(); 
-                });
-                onSnapshot(doc(getScopedCollectionRef('configurations'), 'payment'), docSnap => {
-                    paymentConfig = docSnap.exists() ? docSnap.data() : { pixKey: '' };
-                });
-                onSnapshot(doc(getScopedCollectionRef('configurations'), 'priceRules'), docSnap => {
-                    priceRules = docSnap.exists() ? docSnap.data() : { default: { '18:00-19:00':'150,00', '19:00-20:00':'150,00', '20:00-21:00':'180,00', '21:00-22:00':'180,00', '22:00-23:00':'120,00' }};
-                    renderBasedOnCurrentView();
-                });
+                col.appendChild(slotsContainer);
+                board.appendChild(col);
             }
+        }
 
-            // --- FUNÇÕES AUXILIARES E UI ---
+        // Navegação de Datas
+        document.getElementById('next-week').onclick = () => { currentMonday.setDate(currentMonday.getDate()+7); renderKanban(); };
+        document.getElementById('prev-week').onclick = () => { currentMonday.setDate(currentMonday.getDate()-7); renderKanban(); };
+
+        // Modais Lógica
+        let activeSlot = null;
+        
+        function openBookingModal(slotId, time, price, dateStr, dayName) {
+            activeSlot = { id: slotId, price: price, date: dateStr };
+            document.getElementById('modal-details').innerHTML = `${dayName}<br>${time} - R$ ${price}`;
+            toggleModal('booking-modal', true);
+        }
+        
+        function openCancelModal(slotId) {
+            activeSlot = { id: slotId };
+            toggleModal('cancel-modal', true);
+        }
+
+        document.getElementById('confirm-button').onclick = async () => {
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            if(!name || !phone) return alert("Preencha tudo");
             
-            function setupSharePanel() {
-                const cleanLink = `${window.location.origin}${window.location.pathname}?escolaId=${escolaId}`;
-                shareLinkInput.value = cleanLink;
-                copyShareLinkBtn.onclick = () => navigator.clipboard.writeText(cleanLink).then(() => showToast("Link copiado!"));
-                shareWhatsappBtn.onclick = () => {
-                    const text = encodeURIComponent(`Olá! Agende seu horário na nossa quadra através deste link: ${cleanLink}`);
-                    window.open(`https://wa.me/?text=${text}`, '_blank');
-                };
+            try {
+                // Salva na subcoleção 'agendamentos' da arena
+                await setDoc(doc(db, 'arenas', currentArenaId, 'agendamentos', activeSlot.id), {
+                    clientName: name,
+                    clientPhone: phone,
+                    price: activeSlot.price,
+                    status: 'booked',
+                    createdAt: new Date().toISOString()
+                });
+                toggleModal('booking-modal', false);
+                toggleModal('pix-modal', true);
+                showToast("Agendado!");
+            } catch(e) { console.error(e); showToast("Erro", false); }
+        };
+        
+        document.getElementById('cancel-yes').onclick = async () => {
+             try {
+                await deleteDoc(doc(db, 'arenas', currentArenaId, 'agendamentos', activeSlot.id));
+                toggleModal('cancel-modal', false);
+                showToast("Horário liberado.");
+            } catch(e) { showToast("Erro", false); }
+        };
+        
+        // Utils
+        function toggleModal(id, show) {
+            const el = document.getElementById(id);
+            const content = el.querySelector('div');
+            if(show) {
+                el.classList.remove('hidden');
+                setTimeout(()=> { content.classList.remove('scale-95', 'opacity-0'); }, 10);
+            } else {
+                content.classList.add('scale-95', 'opacity-0');
+                setTimeout(()=> { el.classList.add('hidden'); }, 200);
             }
-            
-            function updateManagerPanelsVisibility(animate = true) {
-                const shouldShowManager = viewToggle.checked;
-                managerPanels.classList.toggle('hidden', !shouldShowManager);
-                teamSorter.classList.toggle('hidden', shouldShowManager);
-                if (shouldShowManager) {
-                    togglePanel(priceManagerContent, togglePriceManagerBtn.querySelector('i'), animate);
-                    sharePanel.classList.remove('hidden');
-                    visualSettingsPanel.classList.remove('hidden');
-                    togglePanel(visualSettingsContent, toggleVisualSettingsBtn.querySelector('i'), animate);
-                } else {
-                    togglePanel(teamSorterContent, toggleTeamSorterBtn.querySelector('i'), animate);
-                    sharePanel.classList.add('hidden');
-                    visualSettingsPanel.classList.add('hidden');
-                }
-            }
-            
-            // Funções utilitárias e de renderização
-            const applyPhoneMask = e => { let v=e.target.value.replace(/\D/g,'').substring(0,11); if(v.length>10)v=`(${v.substring(0,2)}) ${v.substring(2,7)}-${v.substring(7,11)}`;else if(v.length>6)v=`(${v.substring(0,2)}) ${v.substring(2,6)}-${v.substring(6,10)}`;else if(v.length>2)v=`(${v.substring(0,2)}) ${v.substring(2)}`;else if(v.length>0)v=`(${v}`;e.target.value=v; };
-            function getMonday(d){d=new Date(d);const day=d.getDay(),diff=d.getDate()-day+(day===0?-6:1);return new Date(d.setDate(diff))}
-            function formatDate(d){const day=String(d.getDate()).padStart(2,'0'),month=String(d.getMonth()+1).padStart(2,'0');return`${day}/${month}`}
-            function formatFullDate(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${day}`}
-            function getPrice(fullDate,dayName,time){const monthly=Object.values(monthlySchedules).find(m=>m.dayName===dayName&&m.time===time);if(monthly)return monthly.price;if(priceRules[fullDate]&&priceRules[fullDate][time])return priceRules[fullDate][time];if(priceRules[dayName]&&priceRules[dayName][time])return priceRules[dayName][time];return(priceRules.default&&priceRules.default[time])||'0,00'}
-            function findMonthlyBooking(slotId){const[date,time]=slotId.split('_'),dayDate=new Date(date+'T12:00:00Z'),dayName=dayNames[dayDate.getUTCDay()],key=Object.keys(monthlySchedules).find(k=>{const s=monthlySchedules[k];return s.dayName===dayName&&s.time===time});return key?{...monthlySchedules[key],slotId,status:'booked'}:null}
-            
-            // FUNÇÃO CORRIGIDA PARA TRATAR DATA DE EXPIRAÇÃO
-            function checkExpiredReservations(){
-                const now = Date.now();
-                for(const id in schedules){
-                    const b = schedules[id];
-                    if(b.status === 'pending' && b.expiresAt){
-                        let expTime = 0;
-                        // Verifica se é Timestamp do Firestore (tem função toMillis)
-                        if(typeof b.expiresAt.toMillis === 'function') {
-                            expTime = b.expiresAt.toMillis();
-                        } 
-                        // Verifica se é String ISO (do nosso salvamento local)
-                        else if (typeof b.expiresAt === 'string') {
-                            expTime = new Date(b.expiresAt).getTime();
-                        }
-                        
-                        if(expTime > 0 && now > expTime){
-                            deleteDoc(doc(getScopedCollectionRef('schedules'), id)).catch(e => console.error("Erro ao deletar expirado:", e));
-                        }
-                    }
-                }
-            }
-
-            function showToast(msg,isSuccess=true){toastMessage.textContent=msg;if(isSuccess){toastIcon.innerHTML=`<i data-lucide="check-circle" class="h-6 w-6 text-custom-cyan"></i>`;toastNotification.classList.remove('border-red-500');toastNotification.classList.add('border-custom-cyan')}else{toastIcon.innerHTML=`<i data-lucide="alert-triangle" class="h-6 w-6 text-red-500"></i>`;toastNotification.classList.remove('border-custom-cyan');toastNotification.classList.add('border-red-500')}lucide.createIcons();toastNotification.classList.remove('translate-x-[calc(100%+20px)]','opacity-0');setTimeout(()=>toastNotification.classList.add('translate-x-[calc(100%+20px)]','opacity-0'),5000)}
-
-            function renderBasedOnCurrentView(){const term=searchInput.value;if(term)renderFilteredDays(term);else renderWeek();if(isManagerView)updateNextEventDashboard()}
-            function togglePanel(content, icon, animate = true) {if (animate) content.style.transition = 'max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1)'; else content.style.transition = 'none'; const isCollapsed = !content.style.maxHeight || content.style.maxHeight === '0px'; if (isCollapsed) { content.style.maxHeight = content.scrollHeight + "px"; icon.style.transform = 'rotate(0deg)'; } else { content.style.maxHeight = '0px'; icon.style.transform = 'rotate(180deg)'; } }
-            
-            // Renderização do Kanban
-            function createDayColumn(dayDate){const fullDate=formatFullDate(dayDate),dayName=dayNames[dayDate.getDay()],isToday=fullDate===formatFullDate(new Date()),col=document.createElement('div');col.className=`w-72 flex-shrink-0 bg-dark-card rounded-xl border-2 ${isToday?'border-custom-cyan':'border-transparent'}`;let slots=new Set(defaultTimeSlots);Object.values(priceRules).forEach(r=>Object.keys(r).forEach(t=>slots.add(t)));const sortedSlots=Array.from(slots).sort();const slotsHtml=sortedSlots.map(slot=>{const id=`${fullDate}_${slot}`,single=schedules[id],monthly=findMonthlyBooking(id),price=getPrice(fullDate,dayName,slot),today=new Date();today.setHours(0,0,0,0);const slotDate=new Date(dayDate);slotDate.setHours(0,0,0,0);const isPast=slotDate<today,booking=single||monthly;if(isManagerView){let c=`<span class="text-custom-cyan font-bold">Agendar</span>`,bClass='bg-dark-card-hover hover:opacity-70';if(booking){let i=`<p class="text-sm mt-1 truncate">${booking.clientName||'N/A'}</p>`;if(booking.status==='pending')bClass='bg-yellow-900/60 border border-yellow-500/50',c=`<span class="text-xs text-yellow-300">Aguardando Pagamento</span>${i}`;else if(booking.status==='payment_review')bClass='bg-blue-900/60 border border-blue-500/50',c=`<span class="text-xs text-blue-300">Revisar Pagamento</span>${i}`;else bClass='bg-green-900/60 border border-green-500/50',c=`<span class="text-xs text-green-300">${booking.type==='event'?'Evento':'Confirmado'}</span>${i}`}else if(isPast)bClass='bg-gray-900/50',c=`<span class="text-gray-500">Agendar (Passado)</span>`;return`<button class="w-full text-left p-3 rounded-lg ${bClass}" data-slot-id="${id}" data-is-manager-button="true" data-day="${dayName}" data-date="${formatDate(dayDate)}" data-time="${slot}" data-price="${price}"><div class="flex justify-between"><span class="font-semibold">${slot}</span><span class="text-sm text-gray-400">R$ ${price}</span></div>${c}</button>`}else{let s=isPast?'past':(booking?booking.status:'available');if(s==='past')return`<button disabled class="w-full text-left p-3 rounded-lg bg-gray-900/50 cursor-not-allowed"><div class="flex justify-between"><span class="font-semibold text-gray-600">${slot}</span><span class="text-xs text-gray-500">Encerrado</span></div></button>`;if(s==='booked')return`<button disabled class="w-full text-left p-3 rounded-lg bg-gray-900/50 cursor-not-allowed"><div class="flex justify-between"><span class="font-semibold text-gray-500">${slot}</span><span class="text-xs text-red-400">Reservado</span></div></button>`;if(s==='payment_review')return`<button disabled class="w-full text-left p-3 rounded-lg bg-blue-900/40 cursor-not-allowed"><div class="flex justify-between"><span class="font-semibold text-blue-400">${slot}</span><span class="text-xs text-blue-400">Em Revisão</span></div></button>`;if(s==='pending'){if(currentUser&&booking.userId===currentUser.uid){return`<div class="p-3 rounded-lg bg-yellow-900/60 border border-yellow-500/50"><div class="flex justify-between mb-2"><span class="font-semibold text-yellow-300">${slot}</span><span class="text-xs text-yellow-200">Sua pré-reserva</span></div><div class="flex gap-2"><button class="flex-1 text-xs py-1 rounded bg-red-600 hover:bg-red-700" data-slot-id="${id}" data-action="cancel-my-booking">Desistir</button><button class="flex-1 text-xs py-1 rounded bg-green-600 hover:bg-green-700" data-slot-id="${id}" data-action="confirm-my-payment">Já Paguei</button></div></div>`}else{return`<button disabled class="w-full p-3 rounded-lg bg-yellow-900/40 cursor-not-allowed"><div class="flex justify-between"><span class="font-semibold text-yellow-400">${slot}</span><span class="text-xs text-yellow-400">Aguardando Pagamento</span></div></button>`}}return`<button class="w-full text-left p-3 rounded-lg bg-dark-card-hover hover:bg-custom-cyan hover:text-black" data-day="${dayName}" data-date="${formatDate(dayDate)}" data-time="${slot}" data-price="${price}" data-slot-id="${id}"><div class="flex justify-between"><span class="font-semibold">${slot}</span><span class="text-custom-cyan font-bold">R$ ${price}</span></div></button>`}}).join('');const managerTools=isManagerView?`<button class="p-1 rounded-full hover:bg-dark-card-hover add-timeslot-btn" data-date="${fullDate}"><i data-lucide="plus-circle" class="h-5 w-5 text-custom-cyan"></i></button>`:'',todayLabel=isToday?`<span class="text-xs font-bold bg-custom-cyan text-black px-2 py-1 rounded-full">HOJE</span>`:'';col.innerHTML=`<div class="p-4 border-b border-gray-700 flex justify-between items-center"><div><h3 class="font-bold text-lg">${dayName}</h3><p class="text-sm text-gray-400">${formatDate(dayDate)}</p></div><div class="flex items-center gap-2">${todayLabel}${managerTools}</div></div><div class="p-4 space-y-3 h-[60vh] overflow-y-auto">${slotsHtml}</div>`;return col}
-            function attachColumnListeners(){kanbanBoard.querySelectorAll('button[data-slot-id]').forEach(b=>{if(b.dataset.isManagerButton==='true'){b.addEventListener('click',e=>{const{slotId,day,date,time,price}=e.currentTarget.dataset;openManagerModal({slotId,day,date,time,price})})}else if(!b.disabled){if(b.dataset.action==='cancel-my-booking'){b.addEventListener('click',e=>openCancelConfirmModal(e.currentTarget.dataset.slotId))}else if(b.dataset.action==='confirm-my-payment'){b.addEventListener('click',e=>handleClientPaymentNotification(e.currentTarget.dataset.slotId))}else{b.addEventListener('click',e=>{const{day,date,time,price,slotId}=e.currentTarget.dataset;openModal({day,date,time,price,slotId})})}}});kanbanBoard.querySelectorAll('.add-timeslot-btn').forEach(b=>{b.addEventListener('click',e=>{e.stopPropagation();const date=e.currentTarget.dataset.date;openAddSlotModal(date)})})}
-            function renderWeek(){kanbanBoard.innerHTML='';const start=new Date(currentWeekStart),end=new Date(start);end.setDate(end.getDate()+6);weekDisplay.textContent=`${formatDate(start)} - ${formatDate(end)}`;for(let i=0;i<7;i++){const dayDate=new Date(start);dayDate.setDate(dayDate.getDate()+i);kanbanBoard.appendChild(createDayColumn(dayDate))}lucide.createIcons();attachColumnListeners()}
-            function renderFilteredDays(term){kanbanBoard.innerHTML='';const norm=term.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g,"");if(!norm){prevWeekBtn.style.visibility='visible';nextWeekBtn.style.visibility='visible';renderWeek();return}const match=dayNames.find(d=>d.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").startsWith(norm));if(!match){kanbanBoard.innerHTML='<p class="text-center text-gray-400 w-full">Nenhum dia encontrado.</p>';return}const dayIndex=dayNames.indexOf(match);weekDisplay.textContent=`Exibindo próximas: ${match}s`;prevWeekBtn.style.visibility='hidden';nextWeekBtn.style.visibility='hidden';let first=new Date();while(first.getDay()!==dayIndex)first.setDate(first.getDate()+1);for(let i=0;i<8;i++){const d=new Date(first);d.setDate(d.getDate()+(i*7));kanbanBoard.appendChild(createDayColumn(d))}lucide.createIcons();attachColumnListeners()}
-
-             // Eventos e Modais
-            viewToggle.addEventListener('change', () => { isManagerView = viewToggle.checked; updateManagerPanelsVisibility(); renderBasedOnCurrentView(); });
-            searchInput.addEventListener('input', () => renderFilteredDays(searchInput.value));
-            syncToggle.addEventListener('change', () => { syncWithFinance = syncToggle.checked; localStorage.setItem('syncWithFinance', syncWithFinance); showToast(`Sincronização ${syncWithFinance ? 'ativada' : 'desativada'}.`); });
-            prevWeekBtn.addEventListener('click', () => { const d=new Date(currentWeekStart);d.setDate(d.getDate()-7);currentWeekStart=getMonday(d);renderWeek(); });
-            nextWeekBtn.addEventListener('click', () => { const d=new Date(currentWeekStart);d.setDate(d.getDate()+7);currentWeekStart=getMonday(d);renderWeek(); });
-            
-            visualSettingsHeader.addEventListener('click', () => togglePanel(visualSettingsContent, toggleVisualSettingsBtn.querySelector('i')));
-            teamSorterHeader.addEventListener('click', () => togglePanel(teamSorterContent, toggleTeamSorterBtn.querySelector('i')));
-            priceManagerHeader.addEventListener('click', () => togglePanel(priceManagerContent, togglePriceManagerBtn.querySelector('i')));
-            
-            function initPriceManager(){const daySel=document.getElementById('day-selector'),apply=document.getElementById('apply-price-btn');daySel.innerHTML='';dayNames.forEach(name=>{const b=document.createElement('button');b.dataset.dayName=name;b.className='px-3 py-1.5 bg-gray-700 text-sm rounded-md hover:bg-gray-600';b.textContent=name;b.onclick=()=>b.classList.toggle('bg-custom-cyan')&b.classList.toggle('text-black')&b.classList.toggle('bg-gray-700');daySel.appendChild(b)});apply.onclick=async()=>{const price=document.getElementById('price-input').value.trim(),days=daySel.querySelectorAll('.bg-custom-cyan'),start=document.getElementById('start-time-input').value,end=document.getElementById('end-time-input').value;if(!price||days.length===0||!start||!end){showToast("Preencha todos os campos.",false);return}if(start>=end){showToast("Início deve ser antes do fim.",false);return}const rules=JSON.parse(JSON.stringify(priceRules));days.forEach(b=>{const day=b.dataset.dayName;if(!rules[day])rules[day]={};const all=Array.from(new Set([...defaultTimeSlots,...Object.keys(priceRules.default||{})]));all.forEach(s=>{const[sStart]=s.split(' - ');if(sStart>=start&&sStart<end){rules[day][s]=price}})});try{await setDoc(doc(getScopedCollectionRef('configurations'),"priceRules"),rules,{merge:true});showToast("Preços atualizados!")}catch(e){showToast("Erro ao guardar preços.",false)}}}
-            function addPlayerInput(){const c=playerListContainer,div=document.createElement('div');div.className='flex items-center gap-2';const input=document.createElement('input');input.type='text';input.className='flex-grow bg-gray-900 border border-gray-700 rounded-md py-2 px-3 focus:outline-none focus:ring-1 focus:ring-custom-cyan';const btn=document.createElement('button');btn.className='p-1 text-gray-500 hover:text-red-400';btn.innerHTML='<i data-lucide="x-circle" class="h-5 w-5"></i>';btn.onclick=()=>(div.remove(),updatePlayerPlaceholders());div.appendChild(input);div.appendChild(btn);c.appendChild(div);updatePlayerPlaceholders();lucide.createIcons()}
-            function updatePlayerPlaceholders(){document.querySelectorAll('#player-list-container input').forEach((i,idx)=>i.placeholder=`Jogador ${idx+1}`)}
-            document.getElementById('add-player-btn').addEventListener('click', addPlayerInput);
-            document.getElementById('sort-teams-btn').addEventListener('click', ()=>{const players=Array.from(document.querySelectorAll('#player-list-container input')).map(i=>i.value.trim()).filter(Boolean),perTeam=parseInt(document.getElementById('players-per-team').value,10),numTeams=Math.floor(players.length/perTeam);if(players.length<perTeam*2){showToast("Jogadores insuficientes.",false);return}for(let i=players.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[players[i],players[j]]=[players[j],players[i]]}teamResults.innerHTML='';for(let i=0;i<numTeams;i++){const team=players.slice(i*perTeam,(i+1)*perTeam),div=document.createElement('div');div.className='space-y-2';const title=document.createElement('h5');title.className='font-bold text-custom-cyan text-center';title.textContent=`Time ${i+1}`;const list=document.createElement('ul');list.className='text-center';team.forEach(p=>{const li=document.createElement('li');li.textContent=p;list.appendChild(li)});div.appendChild(title);div.appendChild(list);teamResults.appendChild(div)}const rem=players.slice(numTeams*perTeam);if(rem.length>0){const div=document.createElement('div');div.className='space-y-2 col-span-full mt-4';const title=document.createElement('h5');title.className='font-bold text-yellow-400 text-center';title.textContent='Espera';const list=document.createElement('ul');list.className='text-center';rem.forEach(p=>{const li=document.createElement('li');li.textContent=p;list.appendChild(li)});div.appendChild(title);div.appendChild(list);teamResults.appendChild(div)}});
-
-            // Modais globais
-            function closeModal(modal,content){content.classList.add('scale-95','opacity-0');setTimeout(()=>{modal.classList.add('hidden');if(modal===bookingModal){document.getElementById('name').value='';document.getElementById('phone').value='';currentBookingData=null}if(modal===addSlotModal)currentSlotAddData=null},200)}
-            function openModal(data){currentBookingData=data;modalDetails.innerHTML=`<span class="font-bold">${data.day}, ${data.date}</span><br>Horário: ${data.time}<br>Valor: <span class="font-bold text-custom-cyan">R$ ${data.price}</span>`;bookingModal.classList.remove('hidden');setTimeout(()=>bookingModalContent.classList.remove('scale-95','opacity-0'),10)}
-            function openManagerModal(data){const{slotId,day,date,time,price}=data,booking=schedules[slotId]||findMonthlyBooking(slotId),title=document.getElementById('manager-modal-title'),view=document.getElementById('manager-view-container'),form=document.getElementById('manager-form-container'),actions=document.getElementById('manager-actions');actions.innerHTML='';if(booking){title.textContent='Detalhes do Agendamento';view.classList.remove('hidden');form.classList.add('hidden');const details=document.getElementById('manager-modal-details'),phone=(booking.clientPhone||'').replace(/\D/g,''),wa=phone?`https://wa.me/55${phone}`:'#';details.innerHTML=`<p><strong>Horário:</strong> ${day}, ${date} às ${time}</p><p><strong>Cliente:</strong> ${booking.clientName||'N/A'}</p><div class="flex items-center"><p class="flex-grow"><strong>Telefone:</strong> ${booking.clientPhone||'N/A'}</p>${phone?`<a href="${wa}" target="_blank" class="ml-4 h-8 w-8 rounded-full bg-green-500 hover:bg-green-600 inline-flex items-center justify-center"><i data-lucide="message-square" class="h-4 w-4"></i></a>`:''}</div><p><strong>Tipo:</strong> <span class="capitalize">${booking.type||'avulso'}</span></p><p><strong>Status:</strong> <span class="capitalize">${booking.status}</span></p><p><strong>Valor:</strong> R$ ${price}</p>`;if(['pending','payment_review'].includes(booking.status)){actions.innerHTML+=`<button onclick="confirmPayment('${slotId}','${price}')" class="py-2 px-5 bg-green-600 rounded-lg font-bold">Confirmar Pagamento</button>`}actions.innerHTML+=`<button onclick="cancelBooking('${slotId}')" class="py-2 px-5 bg-red-600 rounded-lg font-bold">Cancelar Agendamento</button>`}else{title.textContent='Agendar Horário';view.classList.add('hidden');form.classList.remove('hidden');document.getElementById('manager-form-details').innerHTML=`Agendando para <span class="font-bold">${day}, ${date}</span> às <span class="font-bold">${time}</span>.`;document.getElementById('manager-name').value='';document.getElementById('manager-phone').value='';document.getElementById('manager-booking-type-single').checked=true;actions.innerHTML+=`<button onclick="createBookingByManager('${slotId}','${price}')" class="py-2 px-5 bg-custom-cyan text-black rounded-lg font-bold">Guardar Agendamento</button>`}actions.innerHTML+=`<button onclick="closeManagerModal()" class="py-2 px-5 bg-dark-card-hover rounded-lg font-semibold">Fechar</button>`;managerModal.classList.remove('hidden');setTimeout(()=>{managerModalContent.classList.remove('scale-95','opacity-0');lucide.createIcons()},10)}
-            function openCancelConfirmModal(id){currentCancellationSlotId=id;cancelConfirmModal.classList.remove('hidden');setTimeout(()=>cancelConfirmModalContent.classList.remove('scale-95','opacity-0'),10)}
-            function openAddSlotModal(date){currentSlotAddData={date};const dayDate=new Date(date+'T12:00:00Z');document.getElementById('add-slot-modal-details').textContent=`Adicionar para ${dayNames[dayDate.getUTCDay()]}, ${formatDate(dayDate)}`;addSlotModal.classList.remove('hidden');setTimeout(()=>addSlotModalContent.classList.remove('scale-95','opacity-0'),10)}
-            function openPixInfoModal(){if(paymentConfig.pixKey){pixKeyDisplay.textContent=paymentConfig.pixKey;pixPaymentInfoModal.classList.remove('hidden');setTimeout(()=>pixPaymentInfoModalContent.classList.remove('scale-95','opacity-0'),10)}}
-            
-            window.closeManagerModal=()=>closeModal(managerModal,managerModalContent);
-            window.handleClientPaymentNotification=async id=>{const b=schedules[id];if(b&&b.status==='pending'){try{await updateDoc(doc(getScopedCollectionRef('schedules'),id),{status:'payment_review'});showToast("Aviso de pagamento enviado!")}catch(e){showToast("Erro.",false)}}};
-            window.createBookingByManager=async(id,price)=>{const name=document.getElementById('manager-name').value,phone=document.getElementById('manager-phone').value,type=document.querySelector('input[name="manager-booking-type"]:checked').value;if(!name||!phone)return;const[date,time]=id.split('_'),dayDate=new Date(date+'T12:00:00Z'),dayName=dayNames[dayDate.getUTCDay()];try{if(type==='mensal'){const key=`${dayName}_${time}`;await setDoc(doc(getScopedCollectionRef('monthlySchedules'),key),{clientName:name,clientPhone:phone,type:'mensal',time,dayName,price});showToast("Agendamento mensal guardado!")}else{await setDoc(doc(getScopedCollectionRef('schedules'),id),{clientName:name,clientPhone:phone,type:'avulso',status:'booked',price});showToast("Agendamento guardado!")}}catch(e){showToast("Erro.",false)}closeManagerModal()};
-            window.confirmPayment=async(id,price)=>{const b=schedules[id];if(!b||!['pending','payment_review'].includes(b.status))return;const numPrice=parseFloat(price.replace('.','').replace(',','.')),fDate=formatFullDate(new Date());try{if(syncWithFinance){await addDoc(getScopedCollectionRef("transacoes"),{valor:numPrice,descricao:`Aluguel: ${b.clientName} (${id})`,data:fDate,tipo:'Receita'})}await updateDoc(doc(getScopedCollectionRef('schedules'),id),{status:'booked'});showToast("Confirmado!");closeManagerModal()}catch(e){showToast("Erro.",false)}};
-            window.cancelBooking=async id=>{const s=schedules[id],m=!s?findMonthlyBooking(id):null,fDate=formatFullDate(new Date());try{if(syncWithFinance){if(s&&['booked','payment_review'].includes(s.status)){await addDoc(getScopedCollectionRef("transacoes"),{valor:parseFloat(String(s.price||'0').replace('.','').replace(',','.')),descricao:`Estorno: ${s.clientName} (${id})`,data:fDate,tipo:'Despesa'})}if(m){await addDoc(getScopedCollectionRef("transacoes"),{valor:parseFloat(String(m.price||'0').replace('.','').replace(',','.')),descricao:`Estorno Fixo: ${m.clientName}`,data:fDate,tipo:'Despesa'})}}if(s)await deleteDoc(doc(getScopedCollectionRef('schedules'),id));else if(m){const[,,time]=m.slotId.split('_');await deleteDoc(doc(getScopedCollectionRef('monthlySchedules'),`${m.dayName}_${time}`))}showToast("Cancelado.")}catch(e){showToast("Erro.",false)}closeManagerModal()};
-            
-            // Listeners de Modais
-            bookingModal.addEventListener('click', e => { if (e.target === bookingModal) closeModal(bookingModal, bookingModalContent); });
-            cancelConfirmModal.addEventListener('click', e => { if (e.target === cancelConfirmModal) closeModal(cancelConfirmModal, cancelConfirmModalContent); });
-            managerModal.addEventListener('click', e => { if (e.target === managerModal) closeModal(managerModal, managerModalContent); });
-            paymentModal.addEventListener('click', e => { if(e.target === paymentModal) closeModal(paymentModal, paymentModalContent)});
-            addSlotModal.addEventListener('click', e => { if (e.target === addSlotModal) closeModal(addSlotModal, addSlotModalContent); });
-            document.getElementById('cancel-button').onclick=()=>closeModal(bookingModal,bookingModalContent);
-            document.getElementById('close-pix-info-button').onclick=()=>closeModal(pixPaymentInfoModal,pixPaymentInfoModalContent);
-            document.getElementById('cancel-decline-button').onclick=()=>closeModal(cancelConfirmModal,cancelConfirmModalContent);
-            document.getElementById('integrate-payment-btn').onclick=()=>openPaymentModal();
-            document.getElementById('cancel-payment-button').onclick=()=>closeModal(paymentModal,paymentModalContent);
-            document.getElementById('cancel-add-slot-button').onclick=()=>closeModal(addSlotModal,addSlotModalContent);
-            
-            document.getElementById('confirm-button').onclick=async()=>{if(!currentBookingData||!escolaId)return;const n=document.getElementById('name').value,p=document.getElementById('phone').value;if(!n||!p){showToast("Preencha nome e telefone.",false);return}const exp=new Date();exp.setHours(exp.getHours()+2);try{await setDoc(doc(getScopedCollectionRef('schedules'),currentBookingData.slotId),{status:'pending',expiresAt:exp.toISOString(),clientName:n,clientPhone:p,type:'avulso',price:currentBookingData.price});closeModal(bookingModal,bookingModalContent);openPixInfoModal()}catch(e){showToast("Erro.",false)}};
-            document.getElementById('cancel-confirm-button').onclick=async()=>{if(currentCancellationSlotId&&schedules[currentCancellationSlotId]){try{await deleteDoc(doc(getScopedCollectionRef('schedules'),currentCancellationSlotId));closeModal(cancelConfirmModal,cancelConfirmModalContent);showToast('Cancelado.')}catch(e){showToast('Erro.',false)}}};
-            document.getElementById('save-payment-button').onclick=async()=>{const k=document.getElementById('pix-key-input').value.trim();try{await setDoc(doc(getScopedCollectionRef('configurations'),"payment"),{pixKey:k});showToast("Salvo!");closeModal(paymentModal,paymentModalContent)}catch(e){showToast("Erro.",false)}};
-            document.getElementById('confirm-add-slot-button').onclick=async()=>{if(!currentSlotAddData)return;const{date}=currentSlotAddData,s=document.getElementById('new-start-time').value,e=document.getElementById('new-end-time').value,p=document.getElementById('new-price').value;if(!s||!e||!p){showToast("Preencha tudo.",false);return}if(s>=e){showToast("Horário inválido.",false);return}const r=JSON.parse(JSON.stringify(priceRules));if(!r['default'])r['default']={};r['default'][`${s} - ${e}`]=p;try{await setDoc(doc(getScopedCollectionRef('configurations'),"priceRules"),r,{merge:true});showToast("Horário adicionado!");closeModal(addSlotModal,addSlotModalContent)}catch(e){showToast("Erro.",false)}};
-            document.getElementById('phone').addEventListener('input', applyPhoneMask);
-            document.getElementById('manager-phone').addEventListener('input', applyPhoneMask);
-            
-            // Update Dashboard
-            function formatTimeDiff(diff){const d=Math.floor(diff/864e5),h=Math.floor(diff%864e5/36e5),m=Math.floor(diff%36e5/6e4);let p=[];if(d>0)p.push(`${d} dia${d>1?'s':''}`);if(h>0)p.push(`${h} hora${h>1?'s':''}`);if(m>0&&d===0)p.push(`${m} min`);if(p.length===0)return"agora";return`em ${p.join(', ')}`}
-            function updateNextEventDashboard(){const now=new Date();let all=[];for(const id in schedules){const b=schedules[id];if(['booked','payment_review'].includes(b.status)){const[date,time]=id.split('_'),[start]=time.split(' - '),eventDate=new Date(`${date}T${start}:00`);if(eventDate>now)all.push({...b,date:eventDate,slotId:id})}}for(const key in monthlySchedules){const b=monthlySchedules[key],[dayName,time]=key.split('_'),[start]=time.split(' - '),[h,m]=start.split(':'),target=dayNames.indexOf(dayName);let next=new Date();next.setHours(h,m,0,0);const diff=(target-next.getDay()+7)%7;next.setDate(next.getDate()+diff);if(next<now)next.setDate(next.getDate()+7);all.push({...b,date:next,slotId:`${formatFullDate(next)}_${time}`})}if(all.length>0){all.sort((a,b)=>a.date-b.date);const next=all[0],diff=next.date.getTime()-now.getTime(),[date,time]=next.slotId.split('_'),day=new Date(date+'T12:00:00Z');nextEventDetails.innerHTML=`<div class="grid sm:grid-cols-3 gap-4 items-center"><div class="sm:col-span-2"><p class="text-lg font-semibold">${next.clientName}</p><p class="text-gray-400">${dayNames[day.getUTCDay()]}, ${formatDate(day)} às ${time}</p></div><div class="text-center sm:text-right"><p class="text-2xl font-bold text-custom-cyan">${formatTimeDiff(diff)}</p></div></div>`}else{nextEventDetails.innerHTML='<p class="text-gray-400">Nenhum agendamento futuro.</p>'}}
-
+        }
+        
+        function setupShareLink() {
+            const url = window.location.href;
+            document.getElementById('share-link-input').value = url;
+            document.getElementById('copy-share-link').onclick = () => { navigator.clipboard.writeText(url); showToast("Link copiado!"); };
+            document.getElementById('share-whatsapp-btn').onclick = () => window.open(`https://wa.me/?text=${encodeURIComponent('Reserve seu horário: ' + url)}`);
+        }
+        
+        function showToast(msg, ok=true) {
+            const t = document.getElementById('toast-notification');
+            document.getElementById('toast-message').textContent = msg;
+            t.classList.remove('translate-x-[calc(100%+20px)]', 'opacity-0');
+            setTimeout(() => t.classList.add('translate-x-[calc(100%+20px)]', 'opacity-0'), 3000);
+        }
+        
+        // Listeners de fechar modal
+        document.querySelectorAll('[id$="-modal"]').forEach(m => m.onclick = (e) => { if(e.target===m) toggleModal(m.id, false); });
+        document.getElementById('cancel-button').onclick = () => toggleModal('booking-modal', false);
+        document.getElementById('cancel-no').onclick = () => toggleModal('cancel-modal', false);
+        document.getElementById('close-pix-btn').onclick = () => toggleModal('pix-modal', false);
+        
+        // Toggle de Visão
+        document.getElementById('view-toggle').addEventListener('change', (e) => {
+            isManagerView = e.target.checked;
+            showApp(isManagerView);
         });
+
     </script>
 </body>
 </html>
